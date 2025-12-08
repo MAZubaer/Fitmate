@@ -1,60 +1,77 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-
 const FitmateLogo = "/images/fitmate-logo.jpg";
 </script>
 
 <template>
     <Head title="Welcome" />
 
-    <div class="min-h-screen bg-white text-gray-900 flex flex-col">
+    <!-- Background Gradient -->
+    <div class="min-h-screen w-full bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white flex flex-col">
 
-        <!-- Top Navigation / Logo -->
-        <header class="flex items-center px-8 py-4 shadow-md">
+        <!-- Header -->
+        <header class="flex items-center px-10 py-6">
             <img 
                 :src="FitmateLogo" 
                 alt="FitMate Logo" 
-                class="w-24 h-auto object-contain"
+                class="w-20 h-auto brightness-110 contrast-125"
             />
         </header>
 
-        <!-- Main Content -->
-        <main class="flex flex-col items-center justify-center flex-1 px-6 py-10 text-center">
+        <!-- Hero Section -->
+        <main class="flex justify-center items-center flex-1 px-6 py-12">
+            <div class="text-center max-w-3xl animate-fadeIn">
 
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-8">
-                Welcome to <span class="text-blue-600">FitMate</span>
-            </h1>
+                <!-- Title -->
+                <h1 class="text-5xl md:text-6xl font-extrabold mb-6">
+                    Welcome to 
+                    <span class="bg-gradient-to-r from-blue-400 to-blue-600 text-transparent bg-clip-text">
+                        FitMate
+                    </span>
+                </h1>
 
-            <div class="max-w-2xl space-y-6 text-xl font-medium">
+                <!-- Quotes -->
+                <div class="space-y-5 text-lg md:text-xl text-gray-300 leading-relaxed">
+                    <p>“The body achieves what the mind believes.”</p>
+                    <p>“Don’t limit your challenges — challenge your limits.”</p>
+                    <p>“Success starts with self-discipline.”</p>
+                    <p>“Train like a beast. Look like a beauty.”</p>
+                </div>
 
-                <p class="italic">“The body achieves what the mind believes.”</p>
-                <p class="italic">“Don’t limit your challenges — challenge your limits.”</p>
-                <p class="italic">“Success starts with self-discipline.”</p>
-                <p class="italic">“Train like a beast. Look like a beauty.”</p>
+                <!-- CTA Buttons -->
+                <div class="mt-10 flex justify-center gap-6">
+                    <Link 
+                        href="/login"
+                        class="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 
+                               shadow-lg shadow-blue-700/40 transition duration-300 text-lg font-semibold">
+                        Log In
+                    </Link>
 
+                    <Link 
+                        href="/register"
+                        class="px-8 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 
+                               shadow-lg shadow-gray-700/40 transition duration-300 text-lg font-semibold">
+                        Register
+                    </Link>
+                </div>
             </div>
-
-            <div class="mt-10 flex gap-4">
-                <Link 
-                    href="/login"
-                    class="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
-                >
-                    Log In
-                </Link>
-
-                <Link 
-                    href="/register"
-                    class="px-6 py-3 bg-gray-800 text-white rounded-lg shadow hover:bg-gray-900"
-                >
-                    Register
-                </Link>
-            </div>
-
         </main>
 
-        <footer class="py-6 text-gray-500 text-sm text-center">
+        <!-- Footer -->
+        <footer class="py-6 text-gray-400 text-center text-sm tracking-wide">
             Track.. Thrive.. Repeat..
         </footer>
 
     </div>
 </template>
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1.5s ease-out forwards;
+}
+</style>
