@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WorkoutController; 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,6 +34,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', function () {
         return Inertia::render('Notifications');
     })->name('notifications');
+    Route::get('/workouts-data', [WorkoutController::class, 'index']);     // # ← ADDED
+
+    // Store new workout
+    Route::post('/workouts-data', [WorkoutController::class, 'store']);     // # ← ADDED
+
+    // Update workout
+    Route::put('/workouts-data/{workout}', [WorkoutController::class, 'update']); // # ← ADDED
+
+    // Delete workout
+    Route::delete('/workouts-data/{workout}', [WorkoutController::class, 'destroy']); // # ← ADDED
 });
 
 require __DIR__.'/auth.php';
