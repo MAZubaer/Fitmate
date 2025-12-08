@@ -11,9 +11,11 @@ const submitLogout = () => {
     form.post(route('logout'));
 };
 
+// 🔥 Added Meals here
 const navItems = [
     { label: 'Dashboard', route: 'dashboard', icon: '📊' },
     { label: 'Workout', route: 'workout.index', icon: '🏋️' },
+    { label: 'Meals', route: 'meals.index', icon: '🍛' },   // <-- ADDED
     { label: 'Meal Assistant', route: 'meal.assistant', icon: '🍽️' },
     { label: 'Notifications', route: 'notifications', icon: '🔔' },
 ];
@@ -25,19 +27,15 @@ const navItems = [
             <div class="flex justify-between items-center h-20">
                 <!-- Logo / Home Button -->
                 <Link href="/" class="flex items-center space-x-3 group">
-                    <div
-                        class="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:scale-110 transition"
-                    >
+                    <div class="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:scale-110 transition">
                         <span class="text-white font-bold text-lg">FM</span>
                     </div>
-                    <span
-                        class="text-white font-bold text-xl hidden sm:inline group-hover:text-[#E3E3E3] transition"
-                    >
+                    <span class="text-white font-bold text-xl hidden sm:inline group-hover:text-[#E3E3E3] transition">
                         FitMate
                     </span>
                 </Link>
 
-                <!-- Navigation Links -->
+                <!-- Navigation Links (Desktop) -->
                 <div class="hidden md:flex items-center space-x-1">
                     <template v-for="item in navItems" :key="item.route">
                         <Link
@@ -64,12 +62,7 @@ const navItems = [
                         class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-[#456882] focus:outline-none transition"
                         @click="showDropdown = !showDropdown"
                     >
-                        <svg
-                            class="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
@@ -92,14 +85,10 @@ const navItems = [
                             <span class="hidden sm:inline text-sm">
                                 {{ $page.props.auth.user.name.split(' ')[0] }}
                             </span>
-                            <svg
-                                class="w-4 h-4 ml-2"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
+                            <svg class="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path
                                     fill-rule="evenodd"
-                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a 1 1 0 01-1.414 0l-4-4a 1 1 0 010-1.414z"
                                     clip-rule="evenodd"
                                 />
                             </svg>

@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\MealController; // ✅ ADD THIS LINE
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,6 +26,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/workout', function () {
         return Inertia::render('Workout');
     })->name('workout.index');
+    
+    // Meals CRUD
+    Route::resource('meals', MealController::class);
 
     Route::get('/meal-assistant', function () {
         return Inertia::render('MealAssistant');
