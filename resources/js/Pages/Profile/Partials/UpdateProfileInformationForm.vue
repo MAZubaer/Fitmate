@@ -17,8 +17,10 @@ defineProps({
 const user = usePage().props.auth.user;
 
 const form = useForm({
-    name: user.name,
-    email: user.email,
+    nickname: user.nickname || '',
+    age: user.age || null,
+    gender: user.gender || '',
+    avatar: null,
 });
 </script>
 
@@ -38,35 +40,68 @@ const form = useForm({
             @submit.prevent="form.patch(route('profile.update'))"
             class="mt-6 space-y-6"
         >
-            <div>
-                <InputLabel for="name" value="Name" />
+            <div class="flex items-start gap-4">
+                <div class="shrink-0">
+                    <img
+                        v-if="user.profile_photo_url"
+                        :src="user.profile_photo_url"
+                        alt="Avatar"
+                        class="h-16 w-16 rounded-full object-cover"
+                    />
+                    <div v-else class="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                        {{ user.name.charAt(0) }}
+                    </div>
+                </div>
 
-                <TextInput
-                    id="name"
-                    type="text"
-                    class="mt-1 block w-full"
-                    v-model="form.name"
-                    required
-                    autofocus
-                    autocomplete="name"
-                />
-
-                <InputError class="mt-2" :message="form.errors.name" />
+                <div class="flex-1">
+                    <InputLabel for="avatar" value="Profile Photo" />
+                    <input id="avatar" type="file" class="mt-1" @change="e => form.avatar = e.target.files[0]" />
+                    <InputError class="mt-2" :message="form.errors.avatar" />
+                </div>
             </div>
 
             <div>
-                <InputLabel for="email" value="Email" />
+                <InputLabel for="display_name" value="Name" />
+                <div class="mt-1 text-gray-700">{{ user.name }}</div>
+            </div>
+
+            <div>
+                <InputLabel for="nickname" value="Nickname" />
 
                 <TextInput
-                    id="email"
-                    type="email"
+                    id="nickname"
+                    type="text"
                     class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autocomplete="username"
+                    v-model="form.nickname"
+                    autocomplete="nickname"
                 />
 
-                <InputError class="mt-2" :message="form.errors.email" />
+                <InputError class="mt-2" :message="form.errors.nickname" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <InputLabel for="age" value="Age" />
+                    <TextInput id="age" type="number" class="mt-1 block w-full" v-model="form.age" />
+                    <InputError class="mt-2" :message="form.errors.age" />
+                </div>
+
+                <div>
+                    <InputLabel for="gender" value="Gender" />
+                    <select id="gender" v-model="form.gender" class="mt-1 block w-full rounded-md border-gray-300">
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer_not_say">Prefer not to say</option>
+                    </select>
+                    <InputError class="mt-2" :message="form.errors.gender" />
+                </div>
+            </div>
+
+            <div>
+                <InputLabel for="display_email" value="Email" />
+                <div class="mt-1 text-gray-700">{{ user.email }}</div>
             </div>
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null">

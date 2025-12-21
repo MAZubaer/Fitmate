@@ -15,15 +15,29 @@ defineProps({
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <!-- Welcome Section -->
-                <div
-                    class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8"
-                >
-                    <h1 class="text-4xl font-bold text-white mb-2">
-                        Welcome back, {{ user.name }}! 💪
-                    </h1>
-                    <p class="text-indigo-100">
-                        Member since {{ stats.joined_date }}
-                    </p>
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8 flex items-center gap-6">
+                    <div class="shrink-0">
+                        <img
+                            v-if="user.profile_photo_url"
+                            :src="user.profile_photo_url"
+                            alt="Avatar"
+                            class="h-24 w-24 rounded-full object-cover border-4 border-white"
+                        />
+                        <div v-else class="h-24 w-24 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl font-bold">
+                            {{ user.name.charAt(0) }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h1 class="text-4xl font-bold text-white mb-2">
+                            Welcome back, {{ user.nickname || user.name }}! 💪
+                        </h1>
+                        <p class="text-indigo-100">Member since {{ stats.joined_date }}</p>
+                        <p class="text-indigo-100 mt-1 text-sm">
+                            <span v-if="user.age">Age: {{ user.age }} &nbsp;•&nbsp;</span>
+                            <span v-if="user.gender">Gender: {{ user.gender }}</span>
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Stats Grid -->

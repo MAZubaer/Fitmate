@@ -16,15 +16,12 @@ class ProfileUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class)->ignore($this->user()->id),
-            ],
+            // Name and email are intentionally not required here so users cannot change them
+            // from this form. Only nickname/age/gender/avatar are editable.
+            'nickname' => ['nullable', 'string', 'max:255'],
+            'age' => ['nullable', 'integer', 'min:0', 'max:120'],
+            'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_say'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
         ];
     }
 }

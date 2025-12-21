@@ -24,6 +24,10 @@ class User extends Authenticatable
         'google_id',
         'google_token',
         'google_refresh_token',
+        'profile_photo_path',
+        'nickname',
+        'age',
+        'gender',
     ];
 
     /**
@@ -37,6 +41,15 @@ class User extends Authenticatable
     ];
 
     /**
+     * Accessors to append to model's array / JSON form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'profile_photo_url',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -47,5 +60,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get full URL for profile photo, or null if not set.
+     */
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        if ($this->profile_photo_path) {
+            return asset('storage/' . $this->profile_photo_path);
+        }
+
+        return null;
     }
 }
