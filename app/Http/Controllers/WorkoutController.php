@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\Workout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class WorkoutController extends Controller
 {
@@ -11,16 +14,26 @@ class WorkoutController extends Controller
         $this->middleware('auth'); 
     }
 
-    
     public function index()
     {
-        
-        return Workout::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            // Log incoming headers and cookie keys to help debug auth/session issues
+            Log::debug('WorkoutController@index called', [
+                'auth_id' => Auth::id(),
+                'headers' => request()->headers->all(),
+                'cookies' => array_keys(request()->cookie()),
+                'ip' => request()->ip(),
+            ]);
+
+            return Workout::where('user_id', Auth::id())
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } catch (\Exception $e) {
+            Log::error('WorkoutController@index exception', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to fetch workouts', 'message' => $e->getMessage()], 500);
+        }
     }
 
-    
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -32,16 +45,13 @@ class WorkoutController extends Controller
         ]);
 
         $validated['user_id'] = Auth::id();
-
         $workout = Workout::create($validated);
 
         return response()->json($workout, 201);
     }
 
-    
     public function update(Request $request, Workout $workout)
     {
-        
         if ($workout->user_id !== Auth::id()) {
             return response()->json(['message'=>'Unauthorized'], 403);
         }
@@ -59,7 +69,6 @@ class WorkoutController extends Controller
         return response()->json($workout);
     }
 
-    
     public function destroy(Workout $workout)
     {
         if ($workout->user_id !== Auth::id()) {
@@ -67,7 +76,6 @@ class WorkoutController extends Controller
         }
 
         $workout->delete();
-
         return response()->json(['message' => 'Deleted']);
     }
 }
