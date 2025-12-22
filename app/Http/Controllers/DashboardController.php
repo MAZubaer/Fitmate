@@ -14,12 +14,15 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Get user statistics
         $stats = [
-            'total_workouts' => 0, // Placeholder - add your logic
-            'total_calories' => 0, // Placeholder - add your logic
+            'total_workouts' => 0, // Placeholder
+            'total_calories' => 0, // Placeholder
             'this_month' => date('F Y'),
             'joined_date' => $user->created_at->format('M d, Y'),
+
+            // ✅ ADD THESE (meal system)
+            'meal_streak' => $user->meal_streak,
+            'meal_points' => $user->meal_points,
         ];
 
         return Inertia::render('Dashboard', [

@@ -24,7 +24,6 @@ class ProfileUpdateRequest extends FormRequest
             'nickname' => ['nullable', 'string', 'max:255'],
             'age' => ['nullable', 'integer', 'min:0', 'max:120'],
             'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_say'],
-            'profile_photo' => ['nullable', 'image', 'max:2048'], // max 2MB
         ];
     }
 }
