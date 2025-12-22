@@ -6,18 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+
     public function up(): void
     {
         Schema::create('meals', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');       // user who created the meal
-            $table->string('name');                      // meal name
-            $table->text('description')->nullable();     // optional description
-            $table->integer('calories')->nullable();     // optional calorie count
-            $table->date('meal_date')->nullable();       // optional date of meal
+            $table->unsignedBigInteger('user_id');    
+            $table->string('name');                     
+            $table->text('description')->nullable();    
+            $table->integer('calories')->nullable();    
+            $table->date('meal_date')->nullable();      
             $table->timestamps();
 
             // relationship to users table
@@ -28,9 +26,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+
     public function down(): void
     {
         Schema::dropIfExists('meals');

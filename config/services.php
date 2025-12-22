@@ -40,5 +40,8 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_CLIENT_REDIRECT'),
     ],
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+    ],
 
 ];

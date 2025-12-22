@@ -11,7 +11,7 @@ const submitLogout = () => {
     form.post(route('logout'));
 };
 
-// 🔥 Added Meals here
+
 const navItems = [
     { label: 'Dashboard', route: 'dashboard', icon: '📊' },
     { label: 'Workout', route: 'workout.index', icon: '🏋️' },
