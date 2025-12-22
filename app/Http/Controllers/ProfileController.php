@@ -21,6 +21,7 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'user' => $request->user(),
         ]);
     }
 
@@ -29,23 +30,11 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        $user = $request->user();
         $data = $request->validated();
-
-        // Handle avatar upload if provided
-        if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $data['profile_photo_path'] = $path;
-        }
-
-        $request->user()->fill($data);
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit');
+        $user->fill($data);
+        $user->save();
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**
