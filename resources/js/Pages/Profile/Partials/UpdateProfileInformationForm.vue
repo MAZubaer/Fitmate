@@ -19,6 +19,9 @@ const user = usePage().props.auth.user;
 const form = useForm({
     name: user.name,
     email: user.email,
+    nickname: user.nickname ?? '',
+    age: user.age ?? '',
+    gender: user.gender ?? '',
 });
 </script>
 
@@ -67,6 +70,46 @@ const form = useForm({
                 />
 
                 <InputError class="mt-2" :message="form.errors.email" />
+            </div>
+
+            <div>
+                <InputLabel for="nickname" value="Nickname" />
+                <TextInput
+                    id="nickname"
+                    type="text"
+                    class="mt-1 block w-full"
+                    v-model="form.nickname"
+                    autocomplete="nickname"
+                />
+                <InputError class="mt-2" :message="form.errors.nickname" />
+            </div>
+
+            <div>
+                <InputLabel for="age" value="Age" />
+                <TextInput
+                    id="age"
+                    type="number"
+                    class="mt-1 block w-full"
+                    v-model="form.age"
+                    min="0"
+                    max="120"
+                    autocomplete="age"
+                />
+                <InputError class="mt-2" :message="form.errors.age" />
+            </div>
+
+            <div>
+                <InputLabel for="gender" value="Gender" />
+                <select
+                    id="gender"
+                    v-model="form.gender"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+                <InputError class="mt-2" :message="form.errors.gender" />
             </div>
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null">

@@ -45,9 +45,21 @@ defineProps({
           class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8"
         >
           <h1 class="text-4xl font-bold text-white mb-2">
-            Welcome back, {{ user.name }}! 💪
+            Welcome back, {{ user.nickname ? user.nickname : user.name }}! 💪
           </h1>
           <p class="text-indigo-100">Member since {{ stats.joined_date }}</p>
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white bg-opacity-10 rounded-lg p-4">
+              <span class="block text-indigo-200 text-sm">Age</span>
+              <span class="block text-white text-lg font-semibold">{{ user.age || '—' }}</span>
+            </div>
+            <div class="bg-white bg-opacity-10 rounded-lg p-4">
+              <span class="block text-indigo-200 text-sm">Gender</span>
+              <span class="block text-white text-lg font-semibold">
+                {{ user.gender === 'male' ? 'Male' : user.gender === 'female' ? 'Female' : '—' }}
+              </span>
+            </div>
+          </div>
         </div>
 
         <!-- Stats Grid -->

@@ -13,16 +13,13 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-
         $stats = [
             'total_workouts' => 0, // Placeholder
             'total_calories' => 0, // Placeholder
             'this_month' => date('F Y'),
             'joined_date' => $user->created_at->format('M d, Y'),
-
-            // ✅ ADD THESE (meal system)
-            'meal_streak' => $user->meal_streak,
-            'meal_points' => $user->meal_points,
+            'meal_streak' => $user->meal_streak ?? 0,
+            'meal_points' => $user->meal_points ?? 0,
         ];
 
         return Inertia::render('Dashboard', [
