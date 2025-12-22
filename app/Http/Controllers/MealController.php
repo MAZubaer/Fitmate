@@ -32,6 +32,7 @@ class MealController extends Controller
 
     /**
      * Store a newly created meal in storage.
+     * ✅ UPDATED WITH STREAK + POINTS LOGIC
      */
     public function store(Request $request)
     {
@@ -42,15 +43,32 @@ class MealController extends Controller
             'meal_date' => 'nullable|date',
         ]);
 
+        $user = auth()->user();
+        $today = now()->toDateString();
+
+        // Save meal
         Meal::create([
-            'user_id' => auth()->id(),
+            'user_id' => $user->id,
             'name' => $request->name,
             'description' => $request->description,
             'calories' => $request->calories,
-            'meal_date' => $request->meal_date,
+            'meal_date' => $request->meal_date ?? $today,
         ]);
 
-        return redirect()->route('meals.index')->with('success', 'Meal created successfully.');
+        // 🔥 STREAK LOGIC
+        if ($user->last_meal_date === now()->subDay()->toDateString()) {
+            $user->meal_streak += 1; // continue streak
+        } else {
+            $user->meal_streak = 1; // reset streak
+        }
+
+        // ⭐ POINTS LOGIC
+        $user->meal_points += 10;
+        $user->last_meal_date = $today;
+        $user->save();
+
+        return redirect()->route('meals.index')
+            ->with('success', 'Meal saved! Streak and points updated 🎉');
     }
 
     /**

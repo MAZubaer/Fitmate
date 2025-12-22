@@ -6,8 +6,13 @@ use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\WorkoutController; 
-use App\Http\Controllers\MealController; 
+use App\Http\Controllers\WorkoutController;
+use App\Http\Controllers\MealController;
+use App\Http\Controllers\AiMealAssistantController; // ← ADDED
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
 
 
 // Public routes
@@ -16,8 +21,6 @@ Route::get('/', function () {
 })->name('home');
 
 
-
-// Dashboard (requires auth)
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -34,6 +37,7 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Workout');
     })->name('workout.index');
 
+
     // Workout CRUD API
     Route::get('/workouts-data', [WorkoutController::class, 'index']);
     Route::post('/workouts-data', [WorkoutController::class, 'store']);
@@ -44,15 +48,29 @@ Route::middleware('auth')->group(function () {
     Route::resource('meals', MealController::class);
 
     // Other frontend pages
+
+    // Meals CRUD
+    Route::resource('meals', MealController::class);
+
+    // Meal Assistant page
+
     Route::get('/meal-assistant', function () {
         return Inertia::render('MealAssistant');
     })->name('meal.assistant');
 
+    // AI Meal Assistant backend API
+    Route::post('/ai/meal-assistant', [AiMealAssistantController::class, 'generate']) // ← ADDED
+        ->name('ai.meal.assistant');
+
     Route::get('/notifications', function () {
         return Inertia::render('Notifications');
     })->name('notifications');
+    Route::get('/workouts-data', [WorkoutController::class, 'index']);     // # ← ADDED
+
+    // Store new workout
+    Route::post('/workouts-data', [WorkoutController::class, 'store']);     // # ← ADDED
 
     
 });
 
-require __DIR__.'/auth.php';
+require __DIR__.'/auth.php';  

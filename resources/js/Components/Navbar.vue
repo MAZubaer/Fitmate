@@ -27,9 +27,11 @@ const navItems = [
             <div class="flex justify-between items-center h-20">
                 <!-- Logo / Home Button -->
                 <Link href="/" class="flex items-center space-x-3 group">
-                    <div class="w-12 h-12 bg-black rounded-lg flex items-center justify-center group-hover:scale-110 transition">
-                        <span class="text-white font-bold text-lg">FM</span>
-                    </div>
+                    <img 
+                        src="/images/fitmate-logo.png" 
+                        alt="FitMate Logo" 
+                        class="h-12 w-auto group-hover:scale-110 transition"
+                    />
                     <span class="text-white font-bold text-xl hidden sm:inline group-hover:text-[#E3E3E3] transition">
                         FitMate
                     </span>
