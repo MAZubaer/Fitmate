@@ -1,11 +1,167 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue'
-import { Head } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
+import { ref, onMounted, nextTick } from 'vue';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 defineProps({
   user: Object,
   stats: Object,
 })
+
+// Add methods for quick actions
+function goToWorkout() {
+  router.visit('/workout');
+}
+function goToMeals() {
+  router.visit('/meals');
+}
+
+const showBmiModal = ref(false);
+const height = ref('');
+const weight = ref('');
+const bmi = ref(null);
+const bmiError = ref('');
+const bmiSuccess = ref('');
+const bmiStatus = ref('');
+const bmiMessage = ref('');
+
+const bmiMessages = {
+  underweight: [
+    'Your body may need a little extra fuel. Small, balanced meals and strength training can help you feel stronger every day.',
+    'Health is about nourishment and balance. Focus on eating well and caring for your body.',
+    'You’re on a journey—building strength and energy is a great next step.'
+  ],
+  normal: [
+    'Great job! Your BMI is within a healthy range—keep maintaining your balanced lifestyle.',
+    'Consistency is your superpower. Keep eating well, staying active, and prioritizing rest.',
+    'You’re doing well! Small healthy choices every day make a big difference.'
+  ],
+  overweight: [
+    'You’re taking a positive step by checking your health. Small changes can lead to big results.',
+    'Progress doesn’t have to be fast—focus on consistency, not perfection.',
+    'A balanced diet and regular movement can help you feel more energetic and confident.'
+  ],
+  obese: [
+    'Your health matters, and it’s never too late to start making positive changes.',
+    'Every small step counts. Focus on building healthy habits one day at a time.',
+    'You’re not alone—support, consistency, and patience can lead to meaningful progress.'
+  ]
+};
+
+function getBmiStatusAndMessage(bmiValue) {
+  let status = '';
+  let category = '';
+  if (bmiValue < 18.5) {
+    status = 'Underweight';
+    category = 'underweight';
+  } else if (bmiValue < 25) {
+    status = 'Normal';
+    category = 'normal';
+  } else if (bmiValue < 30) {
+    status = 'Overweight';
+    category = 'overweight';
+  } else {
+    status = 'Obese';
+    category = 'obese';
+  }
+  const messages = bmiMessages[category];
+  const message = messages[Math.floor(Math.random() * messages.length)];
+  return { status, message };
+}
+
+function calculateBmi() {
+  const h = parseFloat(height.value);
+  const w = parseFloat(weight.value);
+  if (!h || !w || h <= 0 || w <= 0) {
+    bmiError.value = 'Please enter valid height and weight.';
+    bmi.value = null;
+    bmiStatus.value = '';
+    bmiMessage.value = '';
+    return;
+  }
+  bmi.value = (w / (h * h)).toFixed(2);
+  bmiError.value = '';
+  const { status, message } = getBmiStatusAndMessage(Number(bmi.value));
+  bmiStatus.value = status;
+  bmiMessage.value = message;
+}
+
+async function submitBmi() {
+  calculateBmi();
+  if (bmiError.value) return;
+  try {
+    // Send BMI to backend (to be implemented)
+    await axios.post('/bmi', { height: height.value, weight: weight.value, bmi: bmi.value });
+    bmiSuccess.value = 'BMI updated!';
+    showBmiModal.value = false;
+    // Optionally, refresh stats or UI
+  } catch (e) {
+    if (e.response && e.response.data && e.response.data.error === 'You can only update BMI once in a day') {
+      bmiError.value = 'You can only update BMI once a day.';
+    } else {
+      bmiError.value = 'Failed to update BMI.';
+    }
+  }
+}
+
+const recentWorkouts = ref([]);
+const recentLoading = ref(true);
+const bmiHistory = ref([]);
+const bmiChartRef = ref(null);
+
+onMounted(async () => {
+  try {
+    const res = await axios.get('/recent-activity');
+    recentWorkouts.value = res.data.workouts;
+  } catch {
+    recentWorkouts.value = [];
+  } finally {
+    recentLoading.value = false;
+  }
+
+  try {
+    const res = await axios.get('/bmi-history');
+    bmiHistory.value = res.data.history;
+    nextTick(() => renderBmiChart());
+  } catch {
+    bmiHistory.value = [];
+  }
+});
+
+function renderBmiChart() {
+  if (!bmiChartRef.value || !bmiHistory.value.length) return;
+  const ctx = bmiChartRef.value.getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: bmiHistory.value.map(h => h.date),
+      datasets: [{
+        label: 'BMI Score',
+        data: bmiHistory.value.map(h => h.bmi),
+        borderColor: '#ec4899',
+        backgroundColor: 'rgba(236,72,153,0.2)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 4,
+        pointBackgroundColor: '#ec4899',
+      }],
+    },
+    options: {
+      scales: {
+        x: { title: { display: true, text: 'Date' } },
+        y: { title: { display: true, text: 'BMI' }, min: 10, max: 50 },
+      },
+      plugins: {
+        legend: { display: false },
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+    },
+  });
+}
 </script>
 
 <template>
@@ -185,29 +341,39 @@ defineProps({
               Recent Activity
             </h2>
 
-            <div class="space-y-4">
-              <div class="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div
-                  class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center"
-                >
-                  <svg
-                    class="w-6 h-6 text-blue-600 dark:text-blue-300"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
-                    />
-                  </svg>
-                </div>
-
-                <div class="ml-4 flex-1">
-                  <p class="text-gray-900 dark:text-white font-medium">No activity yet</p>
-                  <p class="text-gray-500 dark:text-gray-400 text-sm">
-                    Start logging your workouts!
-                  </p>
-                </div>
-              </div>
+            <div class="space-y-4 max-h-64 overflow-y-auto pr-2">
+              <template v-if="recentLoading">
+                <div class="text-gray-500">Loading...</div>
+              </template>
+              <template v-else>
+                <template v-if="recentWorkouts.length === 0">
+                  <div class="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                      <svg class="w-6 h-6 text-blue-600 dark:text-blue-300" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                    </div>
+                    <div class="ml-4 flex-1">
+                      <p class="text-gray-900 dark:text-white font-medium">No activity yet</p>
+                      <p class="text-gray-500 dark:text-gray-400 text-sm">Start logging your workouts!</p>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <div v-for="workout in recentWorkouts" :key="workout.id" class="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                      <svg class="w-6 h-6 text-green-600 dark:text-green-300" fill="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2" stroke="#fff" stroke-width="2" fill="none"/>
+                      </svg>
+                    </div>
+                    <div class="ml-4 flex-1">
+                      <p class="text-gray-900 dark:text-white font-medium">{{ workout.name }}</p>
+                      <p class="text-gray-500 dark:text-gray-400 text-sm">{{ workout.date }} {{ workout.time }} | Sets: {{ workout.sets }}, Reps: {{ workout.reps }}</p>
+                    </div>
+                  </div>
+                </template>
+              </template>
             </div>
           </div>
 
@@ -220,12 +386,14 @@ defineProps({
             <div class="space-y-3">
               <button
                 class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                @click="goToWorkout"
               >
                 + Log Workout
               </button>
 
               <button
                 class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                @click="goToMeals"
               >
                 + Track Meal
               </button>
@@ -237,53 +405,54 @@ defineProps({
               </button>
 
               <button
-                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition hidden"
               >
                 ⚙️ Settings
               </button>
+
+              <button
+                class="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                @click="showBmiModal = true"
+              >
+                🧮 Update BMI
+              </button>
+            </div>
+          </div>
+
+          <!-- BMI History Chart -->
+          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">BMI History</h2>
+            <div style="height:300px;">
+              <canvas ref="bmiChartRef"></canvas>
             </div>
           </div>
         </div>
 
-        <!-- Progress Section -->
-        <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Weekly Progress
-          </h2>
-
-          <div class="space-y-4">
-            <div>
-              <div class="flex justify-between mb-2">
-                <span class="text-gray-700 dark:text-gray-300 font-medium">Monday</span>
-                <span class="text-gray-500 dark:text-gray-400 text-sm">0/5 workouts</span>
-              </div>
-              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between mb-2">
-                <span class="text-gray-700 dark:text-gray-300 font-medium">Tuesday</span>
-                <span class="text-gray-500 dark:text-gray-400 text-sm">0/5 workouts</span>
-              </div>
-              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
-              </div>
-            </div>
-
-            <div>
-              <div class="flex justify-between mb-2">
-                <span class="text-gray-700 dark:text-gray-300 font-medium">Wednesday</span>
-                <span class="text-gray-500 dark:text-gray-400 text-sm">0/5 workouts</span>
-              </div>
-              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
-              </div>
+        <!-- BMI Modal -->
+        <teleport to="body">
+          <div v-if="showBmiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md relative">
+              <button class="absolute top-2 right-2 text-gray-400 hover:text-gray-600" @click="showBmiModal = false">&times;</button>
+              <h2 class="text-xl font-semibold mb-4 text-pink-700 dark:text-pink-300">Update BMI</h2>
+              <form @submit.prevent="submitBmi">
+                <div class="mb-4">
+                  <label class="block text-gray-700 dark:text-gray-200 mb-1">Height (meters)</label>
+                  <input v-model="height" type="number" step="0.01" min="0" class="w-full border rounded px-3 py-2" required />
+                </div>
+                <div class="mb-4">
+                  <label class="block text-gray-700 dark:text-gray-200 mb-1">Weight (kg)</label>
+                  <input v-model="weight" type="number" step="0.1" min="0" class="w-full border rounded px-3 py-2" required />
+                </div>
+                <div v-if="bmi !== null" class="mb-2 text-green-700 dark:text-green-300">Your BMI: {{ bmi }}</div>
+                <div v-if="bmiStatus" class="mb-2 font-semibold text-indigo-700 dark:text-indigo-300">Status: {{ bmiStatus }}</div>
+                <div v-if="bmiMessage" class="mb-2 italic text-blue-700 dark:text-blue-300">{{ bmiMessage }}</div>
+                <div v-if="bmiError" class="mb-2 text-red-600">{{ bmiError }}</div>
+                <div v-if="bmiSuccess" class="mb-2 text-green-600">{{ bmiSuccess }}</div>
+                <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 px-4 rounded-lg w-full">Update</button>
+              </form>
             </div>
           </div>
-        </div>
-
+        </teleport>
       </div>
     </div>
   </AppLayout>

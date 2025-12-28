@@ -40,18 +40,38 @@ const loadWorkouts = async () => {
 onMounted(loadWorkouts)
 
 /* ---------------- ADD WORKOUT ---------------- */
-const addWorkout = async () => {
-    if (!form.value.name) return flash('Exercise name is required')
 
-    try {
-        const res = await axios.post('/workouts-data', form.value)
-        workouts.value.unshift(res.data)
-        flash('Workout saved to database')
-        resetForm()
-    } catch (e) {
-        console.error(e)
-        flash('Failed to save workout')
+const addWorkout = async () => {
+  // Validate on frontend
+  if (!form.value.name) return flash('Exercise name is required')
+  if (!form.value.sets || isNaN(form.value.sets) || form.value.sets < 1) return flash('Sets must be a positive number')
+  if (!form.value.reps || isNaN(form.value.reps) || form.value.reps < 1) return flash('Reps must be a positive number')
+  if (!form.value.date) return flash('Date is required')
+  if (!form.value.time) return flash('Time is required')
+
+  // Ensure sets/reps are integers
+  const payload = {
+    ...form.value,
+    sets: parseInt(form.value.sets),
+    reps: parseInt(form.value.reps)
+  }
+
+  try {
+    const res = await axios.post('/workouts-data', payload)
+    workouts.value.unshift(res.data)
+    flash('Workout saved to database')
+    resetForm()
+  } catch (e) {
+    if (e.response && e.response.data && e.response.data.errors) {
+      // Show first validation error
+      const errors = e.response.data.errors
+      const firstError = Object.values(errors)[0][0]
+      flash(firstError)
+    } else {
+      flash('Failed to save workout')
     }
+    console.error(e)
+  }
 }
 
 /* ---------------- ADD TO PLAN ---------------- */
@@ -64,22 +84,38 @@ const addToPlan = () => {
 
 /* ---------------- SAVE PLAN ---------------- */
 const savePlan = async () => {
-    if (currentPlan.value.length === 0) {
-        flash('No exercises in plan')
-        return
-    }
+  if (currentPlan.value.length === 0) {
+    flash('No exercises in plan')
+    return
+  }
 
-    try {
-        for (const w of currentPlan.value) {
-            const res = await axios.post('/workouts-data', w)
-            workouts.value.unshift(res.data)
-        }
-        currentPlan.value = []
-        flash('Workout plan saved to database')
-    } catch (e) {
-        console.error(e)
-        flash('Failed to save plan')
+  try {
+    for (const w of currentPlan.value) {
+      // Validate and convert sets/reps
+      if (!w.name || !w.sets || isNaN(w.sets) || w.sets < 1 || !w.reps || isNaN(w.reps) || w.reps < 1 || !w.date || !w.time) {
+        flash('Invalid exercise in plan, skipping')
+        continue
+      }
+      const payload = {
+        ...w,
+        sets: parseInt(w.sets),
+        reps: parseInt(w.reps)
+      }
+      const res = await axios.post('/workouts-data', payload)
+      workouts.value.unshift(res.data)
     }
+    currentPlan.value = []
+    flash('Workout plan saved to database')
+  } catch (e) {
+    if (e.response && e.response.data && e.response.data.errors) {
+      const errors = e.response.data.errors
+      const firstError = Object.values(errors)[0][0]
+      flash(firstError)
+    } else {
+      flash('Failed to save plan')
+    }
+    console.error(e)
+  }
 }
 
 

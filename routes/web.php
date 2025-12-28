@@ -9,10 +9,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\AiMealAssistantController; // ← ADDED
+use App\Http\Controllers\BmiController; // ← ADDED
+use App\Http\Controllers\RecentActivityController; // ← ADDED
+use App\Http\Controllers\BmiHistoryController; // ← ADDED
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-
 
 
 // Public routes
@@ -70,7 +70,14 @@ Route::middleware('auth')->group(function () {
     // Store new workout
     Route::post('/workouts-data', [WorkoutController::class, 'store']);     // # ← ADDED
 
-    
+    // BMI update
+    Route::post('/bmi', [BmiController::class, 'store']); // ← ADDED
+
+    // Recent activity
+    Route::get('/recent-activity', [RecentActivityController::class, 'index']); // ← ADDED
+
+    // BMI history
+    Route::get('/bmi-history', [BmiHistoryController::class, 'index']); // ← ADDED
 });
 
-require __DIR__.'/auth.php';  
+require __DIR__.'/auth.php';
