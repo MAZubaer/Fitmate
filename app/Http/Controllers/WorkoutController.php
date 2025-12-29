@@ -41,7 +41,10 @@ class WorkoutController extends Controller
             'sets' => 'required|integer|min:1',
             'reps' => 'required|integer|min:1',
             'date' => 'required|date',
-            'time' => 'required'
+            'time' => 'required',
+            'calories' => 'required|integer|min:0',
+            'completed' => 'boolean',
+            'duration' => 'nullable|integer|min:0',
         ]);
 
         $validated['user_id'] = Auth::id();
@@ -61,7 +64,10 @@ class WorkoutController extends Controller
             'sets' => 'required|integer|min:1',
             'reps' => 'required|integer|min:1',
             'date' => 'required|date',
-            'time' => 'required'
+            'time' => 'required',
+            'calories' => 'required|integer|min:0',
+            'completed' => 'boolean',
+            'duration' => 'nullable|integer|min:0',
         ]);
 
         $workout->update($validated);
@@ -78,4 +84,16 @@ class WorkoutController extends Controller
         $workout->delete();
         return response()->json(['message' => 'Deleted']);
     }
+    public function complete(Workout $workout)
+    {
+    if ($workout->user_id !== Auth::id()) {
+        return response()->json(['message'=>'Unauthorized'], 403);
+    }
+
+    $workout->completed = true;
+    $workout->save();
+
+    return response()->json($workout);
+    }
+
 }
