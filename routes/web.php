@@ -12,6 +12,10 @@ use App\Http\Controllers\AiMealAssistantController; // ← ADDED
 use App\Http\Controllers\BmiController; // ← ADDED
 use App\Http\Controllers\RecentActivityController; // ← ADDED
 use App\Http\Controllers\BmiHistoryController; // ← ADDED
+use App\Http\Controllers\StepController; // ← ADDED
+use App\Http\Controllers\StepHistoryController; // ← ADDED
+use App\Http\Controllers\WaterController; // ← ADDED
+use App\Http\Controllers\WaterHistoryController; // ← ADDED
 use Illuminate\Foundation\Application;
 
 
@@ -78,6 +82,16 @@ Route::middleware('auth')->group(function () {
 
     // BMI history
     Route::get('/bmi-history', [BmiHistoryController::class, 'index']); // ← ADDED
+
+    // Steps
+    Route::post('/steps', [StepController::class, 'store']); // ← ADDED
+    Route::get('/steps/today', [StepController::class, 'today']); // ← ADDED
+    Route::get('/steps-history', [StepHistoryController::class, 'index']); // ← ADDED
+
+    // Water intake
+    Route::post('/water', [WaterController::class, 'store']); // ← ADDED
+    Route::get('/water/today', [WaterController::class, 'today']); // ← ADDED
+    Route::get('/water-history', [WaterHistoryController::class, 'index']);
 });
 
 require __DIR__.'/auth.php';

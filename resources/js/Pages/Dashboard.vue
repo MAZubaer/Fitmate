@@ -3,6 +3,8 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
 import { ref, onMounted, nextTick } from 'vue';
 import { Chart, registerables } from 'chart.js';
+import { format, parseISO, subDays } from 'date-fns';
+import { toZonedTime, format as tzFormat } from 'date-fns-tz';
 
 Chart.register(...registerables);
 
@@ -93,11 +95,10 @@ async function submitBmi() {
   calculateBmi();
   if (bmiError.value) return;
   try {
-    // Send BMI to backend (to be implemented)
     await axios.post('/bmi', { height: height.value, weight: weight.value, bmi: bmi.value });
     bmiSuccess.value = 'BMI updated!';
     showBmiModal.value = false;
-    // Optionally, refresh stats or UI
+    await fetchBmiHistory(); // Refresh chart data
   } catch (e) {
     if (e.response && e.response.data && e.response.data.error === 'You can only update BMI once in a day') {
       bmiError.value = 'You can only update BMI once a day.';
@@ -107,10 +108,24 @@ async function submitBmi() {
   }
 }
 
+async function fetchBmiHistory() {
+  try {
+    const res = await axios.get('/bmi-history');
+    bmiHistory.value = res.data.history;
+    nextTick(() => renderBmiChart());
+  } catch {
+    bmiHistory.value = [];
+  }
+}
+
 const recentWorkouts = ref([]);
 const recentLoading = ref(true);
 const bmiHistory = ref([]);
 const bmiChartRef = ref(null);
+const stepHistory = ref([]);
+const stepChartRef = ref(null);
+const waterHistory = ref([]);
+const waterChartRef = ref(null);
 
 onMounted(async () => {
   try {
@@ -122,37 +137,242 @@ onMounted(async () => {
     recentLoading.value = false;
   }
 
-  try {
-    const res = await axios.get('/bmi-history');
-    bmiHistory.value = res.data.history;
-    nextTick(() => renderBmiChart());
-  } catch {
-    bmiHistory.value = [];
-  }
+  await fetchBmiHistory();
+  await fetchStepHistory();
+  await fetchWaterHistory();
 });
 
-function renderBmiChart() {
-  if (!bmiChartRef.value || !bmiHistory.value.length) return;
-  const ctx = bmiChartRef.value.getContext('2d');
+const DHAKA_TZ = 'Asia/Dhaka';
+
+function formatDhaka(date, fmt) {
+  const zoned = toZonedTime(date, DHAKA_TZ);
+  return tzFormat(zoned, fmt, { timeZone: DHAKA_TZ });
+}
+
+function getLast7Days() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = subDays(new Date(), i);
+    days.push(formatDhaka(d, 'yyyy-MM-dd'));
+  }
+  return days;
+}
+
+
+function getStepChartData() {
+  const last7 = getLast7Days();
+  const historyMap = Object.fromEntries(stepHistory.value.map(h => [h.date, h.steps]));
+  return last7.map(date => ({
+    date,
+    steps: historyMap[date] || 0,
+    weekday: formatDhaka(parseISO(date), 'EEE'),
+  }));
+}
+
+function getLast7DaysWater() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = subDays(new Date(), i);
+    days.push(formatDhaka(d, 'yyyy-MM-dd'));
+  }
+  return days;
+}
+
+function getWaterChartData() {
+  const last7 = getLast7DaysWater();
+  const historyMap = Object.fromEntries(waterHistory.value.map(h => [h.date, h.amount]));
+  return last7.map(date => ({
+    date,
+    amount: historyMap[date] || 0,
+    weekday: formatDhaka(parseISO(date), 'EEE'),
+  }));
+}
+
+function renderStepChart() {
+  if (!stepChartRef.value) return;
+  const chartData = getStepChartData();
+  const ctx = stepChartRef.value.getContext('2d');
   new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: {
-      labels: bmiHistory.value.map(h => h.date),
+      labels: chartData.map(d => d.weekday),
       datasets: [{
-        label: 'BMI Score',
-        data: bmiHistory.value.map(h => h.bmi),
-        borderColor: '#ec4899',
-        backgroundColor: 'rgba(236,72,153,0.2)',
-        tension: 0.3,
-        fill: true,
-        pointRadius: 4,
-        pointBackgroundColor: '#ec4899',
+        label: 'Steps',
+        data: chartData.map(d => d.steps),
+        backgroundColor: '#fbbf24',
+        borderColor: '#f59e42',
+        borderWidth: 2,
       }],
     },
     options: {
       scales: {
-        x: { title: { display: true, text: 'Date' } },
-        y: { title: { display: true, text: 'BMI' }, min: 10, max: 50 },
+        x: { title: { display: true, text: 'Day' } },
+        y: { title: { display: true, text: 'Steps' }, beginAtZero: true },
+      },
+      plugins: {
+        legend: { display: false },
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+    },
+  });
+}
+
+function renderWaterChart() {
+  if (!waterChartRef.value) return;
+  const chartData = getWaterChartData();
+  const ctx = waterChartRef.value.getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: chartData.map(d => d.weekday),
+      datasets: [{
+        label: 'Water Intake (ml)',
+        data: chartData.map(d => d.amount),
+        backgroundColor: '#60a5fa',
+        borderColor: '#2563eb',
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      scales: {
+        x: { title: { display: true, text: 'Day' } },
+        y: { title: { display: true, text: 'Water Intake (ml)' }, beginAtZero: true },
+      },
+      plugins: {
+        legend: { display: false },
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+    },
+  });
+}
+
+const showStepsModal = ref(false);
+const stepsInput = ref('');
+const stepsError = ref('');
+const stepsSuccess = ref('');
+const todaySteps = ref(0);
+
+async function fetchTodaySteps() {
+  try {
+    const res = await axios.get('/steps/today');
+    todaySteps.value = res.data.steps;
+  } catch {
+    todaySteps.value = 0;
+  }
+}
+
+async function submitSteps() {
+  stepsError.value = '';
+  stepsSuccess.value = '';
+  const steps = parseInt(stepsInput.value);
+  if (!steps || steps < 1) {
+    stepsError.value = 'Please enter a valid step count.';
+    return;
+  }
+  try {
+    await axios.post('/steps', { steps });
+    stepsSuccess.value = 'Steps updated!';
+    stepsInput.value = '';
+    fetchTodaySteps();
+    showStepsModal.value = false;
+    await fetchStepHistory(); // Refresh chart data
+  } catch {
+    stepsError.value = 'Failed to update steps.';
+  }
+}
+
+async function fetchStepHistory() {
+  try {
+    const res = await axios.get('/steps-history');
+    stepHistory.value = res.data.history;
+    nextTick(() => renderStepChart());
+  } catch {
+    stepHistory.value = [];
+  }
+}
+
+const showWaterModal = ref(false);
+const waterInput = ref('');
+const waterError = ref('');
+const waterSuccess = ref('');
+const todayWater = ref(0);
+
+async function fetchTodayWater() {
+  try {
+    const res = await axios.get('/water/today');
+    todayWater.value = res.data.amount;
+  } catch {
+    todayWater.value = 0;
+  }
+}
+
+async function submitWater() {
+  waterError.value = '';
+  waterSuccess.value = '';
+  const amount = parseInt(waterInput.value);
+  if (!amount || amount < 1) {
+    waterError.value = 'Please enter a valid amount (ml).';
+    return;
+  }
+  try {
+    await axios.post('/water', { amount });
+    waterSuccess.value = 'Water intake updated!';
+    waterInput.value = '';
+    fetchTodayWater();
+    showWaterModal.value = false;
+    await fetchWaterHistory(); // Refresh chart data
+  } catch {
+    waterError.value = 'Failed to update water intake.';
+  }
+}
+
+async function fetchWaterHistory() {
+  try {
+    const res = await axios.get('/water-history');
+    waterHistory.value = res.data.history;
+    nextTick(() => renderWaterChart());
+  } catch {
+    waterHistory.value = [];
+  }
+}
+
+onMounted(() => {
+  fetchTodaySteps();
+  fetchTodayWater();
+});
+
+function getBmiChartData() {
+  const last7 = getLast7Days();
+  const historyMap = Object.fromEntries(bmiHistory.value.map(h => [h.date, h.bmi]));
+  return last7.map(date => ({
+    date,
+    bmi: historyMap[date] || 0,
+    weekday: formatDhaka(parseISO(date), 'EEE'),
+  }));
+}
+
+function renderBmiChart() {
+  if (!bmiChartRef.value) return;
+  const chartData = getBmiChartData();
+  const ctx = bmiChartRef.value.getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: chartData.map(d => d.weekday), // x-axis: weekday names
+      datasets: [{
+        label: 'BMI Value',
+        data: chartData.map(d => d.bmi), // y-axis: BMI values
+        backgroundColor: '#fbbf24',
+        borderColor: '#b45309',
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      scales: {
+        x: { title: { display: true, text: 'Day' } },
+        y: { title: { display: true, text: 'BMI Value' }, beginAtZero: true },
       },
       plugins: {
         legend: { display: false },
@@ -174,6 +394,14 @@ function renderBmiChart() {
         <!-- 🔥 Meal Streak & ⭐ Meal Points (Top Right Pills) -->
         <div class="flex justify-end mb-4">
           <div class="flex items-center gap-2">
+            <!-- Water Intake -->
+            <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-lg font-semibold shadow">
+              💧 Today's Water: <span>{{ todayWater }} ml</span>
+            </div>
+            <!-- Steps -->
+            <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 text-lg font-semibold shadow">
+              🚶‍♂️ Today's Steps: <span>{{ todaySteps }}</span>
+            </div>
             <!-- Meal Streak -->
             <div
               class="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-sm font-semibold shadow"
@@ -416,6 +644,20 @@ function renderBmiChart() {
               >
                 🧮 Update BMI
               </button>
+
+              <button
+                class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                @click="showStepsModal = true"
+              >
+                🚶‍♂️ Update Steps
+              </button>
+
+              <button
+                class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                @click="showWaterModal = true"
+              >
+                💧 Update Water
+              </button>
             </div>
           </div>
 
@@ -424,6 +666,23 @@ function renderBmiChart() {
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">BMI History</h2>
             <div style="height:300px;">
               <canvas ref="bmiChartRef"></canvas>
+            </div>
+          </div>
+
+          <!-- Steps History Chart -->
+          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-yellow-700 dark:text-yellow-300 mb-4">Step History</h2>
+            <div style="height:300px;">
+              <canvas ref="stepChartRef"></canvas>
+            </div>
+          </div>
+
+          <!-- Water Intake Chart -->
+          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-teal-700 dark:text-teal-300 mb-4">Water Intake</h2>
+            <div style="height:300px;">
+              <!-- Placeholder for water intake chart -->
+              <canvas ref="waterChartRef"></canvas>
             </div>
           </div>
         </div>
@@ -449,6 +708,44 @@ function renderBmiChart() {
                 <div v-if="bmiError" class="mb-2 text-red-600">{{ bmiError }}</div>
                 <div v-if="bmiSuccess" class="mb-2 text-green-600">{{ bmiSuccess }}</div>
                 <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 px-4 rounded-lg w-full">Update</button>
+              </form>
+            </div>
+          </div>
+        </teleport>
+
+        <!-- Steps Modal -->
+        <teleport to="body">
+          <div v-if="showStepsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md relative">
+              <button class="absolute top-2 right-2 text-gray-400 hover:text-gray-600" @click="showStepsModal = false">&times;</button>
+              <h2 class="text-xl font-semibold mb-4 text-yellow-700 dark:text-yellow-300">Update Steps</h2>
+              <form @submit.prevent="submitSteps">
+                <div class="mb-4">
+                  <label class="block text-gray-700 dark:text-gray-200 mb-1">Steps</label>
+                  <input v-model="stepsInput" type="number" min="1" class="w-full border rounded px-3 py-2" required />
+                </div>
+                <div v-if="stepsError" class="mb-2 text-red-600">{{ stepsError }}</div>
+                <div v-if="stepsSuccess" class="mb-2 text-green-600">{{ stepsSuccess }}</div>
+                <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg w-full">Update</button>
+              </form>
+            </div>
+          </div>
+        </teleport>
+
+        <!-- Water Intake Modal -->
+        <teleport to="body">
+          <div v-if="showWaterModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md relative">
+              <button class="absolute top-2 right-2 text-gray-400 hover:text-gray-600" @click="showWaterModal = false">&times;</button>
+              <h2 class="text-xl font-semibold mb-4 text-teal-700 dark:text-teal-300">Update Water Intake</h2>
+              <form @submit.prevent="submitWater">
+                <div class="mb-4">
+                  <label class="block text-gray-700 dark:text-gray-200 mb-1">Amount (ml)</label>
+                  <input v-model="waterInput" type="number" min="1" class="w-full border rounded px-3 py-2" required />
+                </div>
+                <div v-if="waterError" class="mb-2 text-red-600">{{ waterError }}</div>
+                <div v-if="waterSuccess" class="mb-2 text-green-600">{{ waterSuccess }}</div>
+                <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg w-full">Update</button>
               </form>
             </div>
           </div>
