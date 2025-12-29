@@ -16,8 +16,8 @@ class AiMealAssistantController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . config('services.groq.key'),
             'Content-Type'  => 'application/json',
-        ])->post('https://api.groq.com/openai/v1/chat/completions', [
-            'model' => 'llama-3.1-8b-instant',
+        ])->post('https://api.groq.com/openai/v1/chat/completions',[
+            'model' => 'llama-3.3-70b-versatile',
             'messages' => [
                 [
                     'role' => 'system',
