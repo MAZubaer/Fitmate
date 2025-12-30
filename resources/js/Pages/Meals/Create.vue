@@ -8,6 +8,7 @@ const form = useForm({
     description: '',
     calories: '',
     meal_date: '',
+    meal_time: '',
 });
 
 function submit() {
@@ -38,9 +39,15 @@ function submit() {
                     <input type="number" v-model="form.calories" class="input">
                 </div>
 
+
                 <div>
                     <label class="font-semibold">Meal Date</label>
                     <input type="date" v-model="form.meal_date" class="input">
+                </div>
+
+                <div>
+                    <label class="font-semibold">Meal Time</label>
+                    <input type="time" v-model="form.meal_time" class="input">
                 </div>
 
                 <PrimaryButton :disabled="form.processing">

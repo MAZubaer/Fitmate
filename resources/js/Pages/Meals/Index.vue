@@ -36,6 +36,7 @@ function deleteMeal(id) {
                     <p class="text-gray-600">{{ meal.description }}</p>
                     <p class="text-gray-700 mt-2"><b>Calories:</b> {{ meal.calories ?? 'N/A' }}</p>
                     <p class="text-gray-700"><b>Date:</b> {{ meal.meal_date ?? 'N/A' }}</p>
+                    <p class="text-gray-700"><b>Time:</b> {{ meal.meal_time ? meal.meal_time.slice(0,5) : 'N/A' }}</p>
 
                     <div class="mt-4 flex gap-4">
                         <Link

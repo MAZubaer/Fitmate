@@ -15,6 +15,7 @@ class Meal extends Model
         'description',
         'calories',
         'meal_date',
+        'meal_time',
     ];
 
     // Relationship: A meal belongs to a user

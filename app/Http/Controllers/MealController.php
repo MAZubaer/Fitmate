@@ -41,6 +41,7 @@ class MealController extends Controller
             'description' => 'nullable|string',
             'calories' => 'nullable|integer',
             'meal_date' => 'nullable|date',
+            'meal_time' => 'nullable',
         ]);
 
         $user = auth()->user();
@@ -53,6 +54,7 @@ class MealController extends Controller
             'description' => $request->description,
             'calories' => $request->calories,
             'meal_date' => $request->meal_date ?? $today,
+            'meal_time' => $request->meal_time,
         ]);
 
         // 🔥 STREAK LOGIC
@@ -95,9 +97,10 @@ class MealController extends Controller
             'description' => 'nullable|string',
             'calories' => 'nullable|integer',
             'meal_date' => 'nullable|date',
+            'meal_time' => 'nullable',
         ]);
 
-        $meal->update($request->only(['name','description','calories','meal_date']));
+        $meal->update($request->only(['name','description','calories','meal_date','meal_time']));
 
         return redirect()->route('meals.index')->with('success', 'Meal updated successfully.');
     }
