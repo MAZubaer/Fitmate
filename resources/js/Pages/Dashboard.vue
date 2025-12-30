@@ -659,7 +659,7 @@ function renderBmiChart() {
           </div>
         </div>
         <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <!-- Recent Activity -->
           <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -773,37 +773,29 @@ function renderBmiChart() {
             </div>
           </div>
         </div>
-        <!-- Charts Section -->
-        <div class="mt-8">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-green-700 dark:text-green-300 mb-4">Calorie Intake (Last 7 Days)</h2>
-            <div style="height:300px;">
-              <canvas ref="calorieChartRef"></canvas>
-            </div>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <!-- Charts Section: 2x1 row, then 3x1 row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-72 flex flex-col justify-between">
             <h2 class="text-xl font-semibold text-red-700 dark:text-red-300 mb-4">Calories Burned (Last 7 Days)</h2>
-            <div style="height:300px;">
-              <canvas ref="calorieBurnedChartRef"></canvas>
-            </div>
+            <div class="flex-1 flex items-center justify-center"><canvas ref="calorieBurnedChartRef" style="width:100% !important;height:100% !important;"></canvas></div>
           </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-72 flex flex-col justify-between">
+            <h2 class="text-xl font-semibold text-green-700 dark:text-green-300 mb-4">Calorie Intake (Last 7 Days)</h2>
+            <div class="flex-1 flex items-center justify-center"><canvas ref="calorieChartRef" style="width:100% !important;height:100% !important;"></canvas></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-64 flex flex-col justify-between">
             <h2 class="text-xl font-semibold text-yellow-700 dark:text-yellow-300 mb-4">Step History</h2>
-            <div style="height:300px;">
-              <canvas ref="stepChartRef"></canvas>
-            </div>
+            <div class="flex-1 flex items-center justify-center"><canvas ref="stepChartRef" style="width:100% !important;height:100% !important;"></canvas></div>
           </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-64 flex flex-col justify-between">
             <h2 class="text-xl font-semibold text-teal-700 dark:text-teal-300 mb-4">Water Intake</h2>
-            <div style="height:300px;">
-              <canvas ref="waterChartRef"></canvas>
-            </div>
+            <div class="flex-1 flex items-center justify-center"><canvas ref="waterChartRef" style="width:100% !important;height:100% !important;"></canvas></div>
           </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-64 flex flex-col justify-between">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">BMI History</h2>
-            <div style="height:300px;">
-              <canvas ref="bmiChartRef"></canvas>
-            </div>
+            <div class="flex-1 flex items-center justify-center"><canvas ref="bmiChartRef" style="width:100% !important;height:100% !important;"></canvas></div>
           </div>
         </div>
         <!-- Modals Section -->
