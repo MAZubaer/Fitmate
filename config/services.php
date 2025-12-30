@@ -41,7 +41,9 @@ return [
         'redirect' => env('GOOGLE_CLIENT_REDIRECT'),
     ],
 
-    
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+    ],
 
 
 ];

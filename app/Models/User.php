@@ -27,6 +27,7 @@ class User extends Authenticatable
         'nickname',
         'age',
         'gender',
+        'calorie_goal',
     ];
 
     /**
