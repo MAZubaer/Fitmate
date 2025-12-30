@@ -28,18 +28,31 @@ class DashboardController extends Controller
         // Daily calorie goal
         $dailyGoal = $user->calorie_goal ?? 2200;
 
-        // Calories per day for last 7 days
-        $calorieChart = Meal::where('user_id', $user->id)
-            ->whereDate('meal_date', '>=', now()->subDays(6))
+        // Calories per day for last 7 days (today + previous 6 days, always 7 days, fill missing with 0)
+        $startDate = now()->subDays(6)->toDateString();
+        $endDate = now()->toDateString();
+        $meals = Meal::where('user_id', $user->id)
+            ->whereDate('meal_date', '>=', $startDate)
+            ->whereDate('meal_date', '<=', $endDate)
             ->selectRaw('DATE(meal_date) as date, SUM(calories) as calories')
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
+            ->get()
+            ->keyBy('date');
+
+        $calorieChart = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            $calorieChart[] = [
+                'date' => $date,
+                'calories' => isset($meals[$date]) ? (int)$meals[$date]->calories : 0,
+            ];
+        }
 
         // Goal logic (5 goals per week)
         $goalsCompleted = 0;
         foreach ($calorieChart as $day) {
-            if ($day->calories >= $dailyGoal) {
+            if ($day['calories'] >= $dailyGoal) {
                 $goalsCompleted++;
             }
         }
