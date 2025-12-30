@@ -4,10 +4,9 @@ import { Head, router } from '@inertiajs/vue3'
 import { ref, onMounted, nextTick } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import { format, parseISO, subDays } from 'date-fns';
-import { toZonedTime, format as tzFormat } from 'date-fns-tz';
-
 Chart.register(...registerables);
 
+const DHAKA_TZ = 'Asia/Dhaka';
 const goToExport = () => {
   router.visit('/analytics/export')
 }
@@ -159,18 +158,26 @@ onMounted(async () => {
   await fetchWaterHistory();
 });
 
-const DHAKA_TZ = 'Asia/Dhaka';
-
 function formatDhaka(date, fmt) {
-  const zoned = toZonedTime(date, DHAKA_TZ);
-  return tzFormat(zoned, fmt, { timeZone: DHAKA_TZ });
+  // Always use Asia/Dhaka for all date formatting
+  const d = new Date(date);
+  // Use Intl.DateTimeFormat for Asia/Dhaka
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: DHAKA_TZ,
+    ...(fmt === 'yyyy-MM-dd' ? { year: 'numeric', month: '2-digit', day: '2-digit' } : {}),
+    ...(fmt === 'EEE' ? { weekday: 'short' } : {}),
+  }).format(d);
 }
 
 function getLast7Days() {
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = subDays(new Date(), i);
-    days.push(formatDhaka(d, 'yyyy-MM-dd'));
+    // Format as yyyy-MM-dd in Asia/Dhaka
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    days.push(`${year}-${month}-${day}`);
   }
   return days;
 }
@@ -190,7 +197,10 @@ function getLast7DaysWater() {
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = subDays(new Date(), i);
-    days.push(formatDhaka(d, 'yyyy-MM-dd'));
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    days.push(`${year}-${month}-${day}`);
   }
   return days;
 }
