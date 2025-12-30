@@ -8,9 +8,10 @@ import { toZonedTime, format as tzFormat } from 'date-fns-tz';
 
 Chart.register(...registerables);
 
-defineProps({
+const props = defineProps({
   user: Object,
   stats: Object,
+  calorieChart: Array //
 })
 
 // Add methods for quick actions
@@ -29,6 +30,11 @@ const bmiError = ref('');
 const bmiSuccess = ref('');
 const bmiStatus = ref('');
 const bmiMessage = ref('');
+const showGoalModal = ref(false)
+const calorieGoal = ref(props.stats.daily_goal)//
+const goalSuccess = ref('')
+
+
 
 const bmiMessages = {
   underweight: [
@@ -118,6 +124,12 @@ async function fetchBmiHistory() {
   }
 }
 
+async function updateGoal() {
+  await axios.post('/user/calorie-goal', { goal: calorieGoal.value })
+  goalSuccess.value = 'Goal updated!'
+  setTimeout(() => window.location.reload(), 800)
+}
+
 const recentWorkouts = ref([]);
 const recentLoading = ref(true);
 const bmiHistory = ref([]);
@@ -126,6 +138,7 @@ const stepHistory = ref([]);
 const stepChartRef = ref(null);
 const waterHistory = ref([]);
 const waterChartRef = ref(null);
+const calorieChartRef = ref(null);
 
 onMounted(async () => {
   try {
@@ -248,6 +261,37 @@ function renderWaterChart() {
   });
 }
 
+function renderCalorieChart() {
+  if (!calorieChartRef.value) return
+  if (!props.calorieChart || props.calorieChart.length === 0) return
+
+  const ctx = calorieChartRef.value.getContext('2d')
+
+  const labels = props.calorieChart.map(d =>
+    new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })
+  )
+
+  const data = props.calorieChart.map(d => d.calories)
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Calories',
+        data,
+        backgroundColor: '#34d399',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } }
+    }
+  })
+}
+
+
+
 const showStepsModal = ref(false);
 const stepsInput = ref('');
 const stepsError = ref('');
@@ -341,6 +385,7 @@ async function fetchWaterHistory() {
 onMounted(() => {
   fetchTodaySteps();
   fetchTodayWater();
+  renderCalorieChart(); //
 });
 
 function getBmiChartData() {
@@ -481,16 +526,38 @@ function renderBmiChart() {
             class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition"
           >
             <div class="flex items-center justify-between">
-              <div>
+              <div class="flex-1">
                 <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">
-                  Calories Burned
+                  Calories Consumed
                 </p>
+
                 <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {{ stats.total_calories }}
+                  {{ stats.total_calories }} kcal
                 </p>
+
+                <p class="text-sm text-green-600 mt-1">
+                  Today: {{ stats.today_calories }} kcal
+                </p>
+
+                <!-- 🔥 GOAL PROGRESS BAR (THIS IS THE NEW PART) -->
+                <div class="mt-3">
+                  <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    <span>Goal: {{ stats.daily_goal }} kcal</span>
+                    <span>{{ stats.goal_percent }}%</span>
+                  </div>
+
+                  <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      class="bg-green-500 h-2 rounded-full transition-all"
+                      :style="{ width: Math.min(stats.goal_percent, 100) + '%' }"
+                    ></div>
+                  </div>
+                </div>
+                <!-- 🔥 END GOAL UI -->
+
               </div>
 
-              <div class="bg-orange-100 dark:bg-orange-900 p-4 rounded-full">
+              <div class="bg-orange-100 dark:bg-orange-900 p-4 rounded-full ml-4">
                 <svg
                   class="w-8 h-8 text-orange-600 dark:text-orange-300"
                   fill="currentColor"
@@ -503,6 +570,7 @@ function renderBmiChart() {
               </div>
             </div>
           </div>
+
 
           <!-- Current Month Card -->
           <div
@@ -542,7 +610,7 @@ function renderBmiChart() {
                   Goals Completed
                 </p>
                 <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  0/5
+                  {{ stats.goals_completed }}/1
                 </p>
               </div>
 
@@ -658,6 +726,15 @@ function renderBmiChart() {
               >
                 💧 Update Water
               </button>
+
+              <button
+                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg"
+                @click="showGoalModal = true"
+              >
+                🎯 Set Calorie Goal
+              </button>
+
+
             </div>
           </div>
 
@@ -686,6 +763,17 @@ function renderBmiChart() {
             </div>
           </div>
         </div>
+
+          <!-- 🔥 Calorie Intake Chart -->
+          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-green-700 dark:text-green-300 mb-4">
+              Calorie Intake (Last 7 Days)
+            </h2>
+            <div style="height:300px;">
+              <canvas ref="calorieChartRef"></canvas>
+            </div>
+          </div>
+
 
         <!-- BMI Modal -->
         <teleport to="body">
@@ -750,7 +838,50 @@ function renderBmiChart() {
             </div>
           </div>
         </teleport>
+
+        <!-- 🎯 Calorie Goal Modal -->
+        <teleport to="body">
+          <div v-if="showGoalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md relative">
+
+              <button
+                type="button"
+                class="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                @click="showGoalModal = false"
+              >
+                Close
+              </button>
+
+              <h2 class="text-xl font-semibold mb-4 text-orange-600 dark:text-orange-300">
+                Set Daily Calorie Goal
+              </h2>
+
+              <input
+                v-model="calorieGoal"
+                type="number"
+                min="1000"
+                max="5000"
+                class="w-full border rounded px-4 py-2 mb-4 dark:bg-gray-800 dark:text-white"
+              />
+
+              <div v-if="goalSuccess" class="text-green-600 mb-2">
+                {{ goalSuccess }}
+              </div>
+
+              <button
+                type="button"
+                @click="updateGoal"
+                class="bg-orange-600 hover:bg-orange-700 text-white w-full py-2 rounded-lg"
+              >
+                Save Goal
+              </button>
+
+            </div>
+          </div>
+        </teleport>
+
       </div>
     </div>
   </AppLayout>
 </template>
+
