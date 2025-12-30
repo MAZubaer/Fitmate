@@ -8,6 +8,10 @@ import { toZonedTime, format as tzFormat } from 'date-fns-tz';
 
 Chart.register(...registerables);
 
+const goToExport = () => {
+  router.visit('/analytics/export')
+}
+
 const props = defineProps({
   user: Object,
   stats: Object,
@@ -732,6 +736,13 @@ function renderBmiChart() {
                 @click="showGoalModal = true"
               >
                 🎯 Set Calorie Goal
+              </button>
+
+              <button
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                @click="goToExport"
+              >
+                📤 Export Health Data
               </button>
 
 

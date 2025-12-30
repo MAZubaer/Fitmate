@@ -1,4 +1,5 @@
 <script setup>
+import AppLayout from '@/Layouts/AppLayout.vue'
 import { ref, onMounted, nextTick } from 'vue'
 import axios from 'axios'
 
@@ -110,80 +111,81 @@ onMounted(async () => {
 </script>
 
 <template>
-<div class="min-h-screen bg-gradient-to-br from-[#0F2027] via-[#203A43] to-[#2C5364] flex">
+<AppLayout>
+  <div class="min-h-screen bg-gradient-to-br from-[#0F2027] via-[#203A43] to-[#2C5364] flex">
 
-  <!-- Sidebar -->
-  <div class="w-80 bg-black/30 backdrop-blur-xl border-r border-white/10 text-white flex flex-col">
-    <div class="px-6 py-5 border-b border-white/10">
-      <h2 class="text-lg font-semibold">💬 Chats</h2>
-      <button @click="newChat"
-        class="mt-3 w-full bg-[#4FD1C5] text-[#0F2027] py-2 rounded-lg font-medium hover:bg-[#38B2AC]">
-        + New Chat
-      </button>
-    </div>
+    <!-- Sidebar -->
+    <div class="w-80 bg-black/30 backdrop-blur-xl border-r border-white/10 text-white flex flex-col">
+      <div class="px-6 py-5 border-b border-white/10">
+        <h2 class="text-lg font-semibold">💬 Chats</h2>
+        <button @click="newChat"
+          class="mt-3 w-full bg-[#4FD1C5] text-[#0F2027] py-2 rounded-lg font-medium hover:bg-[#38B2AC]">
+          + New Chat
+        </button>
+      </div>
 
-    <div class="flex-1 overflow-y-auto">
-      <div v-for="chat in chats"
-        :key="chat.session_id"
-        @click="loadChat(chat.session_id)"
-        class="px-5 py-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition">
-        <div class="text-sm truncate">{{ chat.user_message }}</div>
-        <div class="text-xs text-white/40 mt-1">
-          {{ new Date(chat.created_at).toLocaleString() }}
+      <div class="flex-1 overflow-y-auto">
+        <div v-for="chat in chats"
+          :key="chat.session_id"
+          @click="loadChat(chat.session_id)"
+          class="px-5 py-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition">
+          <div class="text-sm truncate">{{ chat.user_message }}</div>
+          <div class="text-xs text-white/40 mt-1">
+            {{ new Date(chat.created_at).toLocaleString() }}
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Chat -->
-  <div class="flex-1 flex flex-col">
+    <!-- Chat -->
+    <div class="flex-1 flex flex-col">
 
-    <div class="px-10 py-6 border-b border-white/10 text-white">
-      <h1 class="text-2xl font-semibold">FitMate AI Coach</h1>
-      <p class="text-sm text-white/60">Your personal meal assistant</p>
-    </div>
+      <div class="px-10 py-6 border-b border-white/10 text-white">
+        <h1 class="text-2xl font-semibold">FitMate AI Coach</h1>
+        <p class="text-sm text-white/60">Your personal meal assistant</p>
+      </div>
 
-    <div ref="chatContainer"
-      class="flex-1 overflow-y-auto px-10 py-8 space-y-6">
+      <div ref="chatContainer" class="flex-1 overflow-y-auto px-10 py-8 space-y-6">
 
-      <div v-for="(msg, i) in messages" :key="i"
-        class="flex"
-        :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
+        <div v-for="(msg, i) in messages" :key="i"
+          class="flex"
+          :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
 
-        <div
-          class="max-w-[70%] px-5 py-4 rounded-2xl text-sm leading-relaxed"
-          :class="msg.role === 'user'
-            ? 'bg-[#1B3C53] text-white'
-            : 'bg-white/10 text-white border border-white/10'">
-          {{ msg.text }}
+          <div
+            class="max-w-[70%] px-5 py-4 rounded-2xl text-sm leading-relaxed"
+            :class="msg.role === 'user'
+              ? 'bg-[#1B3C53] text-white'
+              : 'bg-white/10 text-white border border-white/10'">
+            {{ msg.text }}
+          </div>
+        </div>
+
+        <div v-if="loading" class="text-white/50 italic">
+          AI is thinking…
+        </div>
+
+        <div v-if="messages.length === 0 && !loading"
+          class="text-center text-white/40 mt-24 text-sm">
+          Ask your AI coach about meals, calories, or diet plans
         </div>
       </div>
 
-      <div v-if="loading" class="text-white/50 italic">
-        AI is thinking…
+      <div class="px-8 py-6 border-t border-white/10 bg-black/20 flex gap-4">
+        <input
+          v-model="input"
+          @keyup.enter="sendMessage"
+          placeholder="Ask your AI meal coach..."
+          class="flex-1 bg-black/30 text-white placeholder-white/40 border border-white/10 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-[#4FD1C5]" />
+
+        <button
+          @click="sendMessage"
+          :disabled="loading"
+          class="px-8 py-4 rounded-xl bg-[#4FD1C5] text-[#0F2027] font-medium hover:bg-[#38B2AC]">
+          Ask
+        </button>
       </div>
 
-      <div v-if="messages.length === 0 && !loading"
-        class="text-center text-white/40 mt-24 text-sm">
-        Ask your AI coach about meals, calories, or diet plans
-      </div>
     </div>
-
-    <div class="px-8 py-6 border-t border-white/10 bg-black/20 flex gap-4">
-      <input
-        v-model="input"
-        @keyup.enter="sendMessage"
-        placeholder="Ask your AI meal coach..."
-        class="flex-1 bg-black/30 text-white placeholder-white/40 border border-white/10 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-[#4FD1C5]" />
-
-      <button
-        @click="sendMessage"
-        :disabled="loading"
-        class="px-8 py-4 rounded-xl bg-[#4FD1C5] text-[#0F2027] font-medium hover:bg-[#38B2AC]">
-        Ask
-      </button>
-    </div>
-
   </div>
-</div>
+</AppLayout>
 </template>

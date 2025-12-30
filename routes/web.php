@@ -19,6 +19,7 @@ use App\Http\Controllers\WaterHistoryController;
 use Illuminate\Foundation\Application;
 use App\Models\AiChat;
 use Illuminate\Support\Str;
+use App\Http\Controllers\AnalyticsExportController;
 
 
 // Public routes
@@ -86,6 +87,10 @@ Route::middleware('auth')->group(function () {
             ->orderBy('created_at')
             ->get();
     });
+
+    Route::get('/analytics/export', fn () => Inertia::render('AnalyticsExport'));
+    Route::get('/analytics/export/csv', [AnalyticsExportController::class, 'csv']);
+    Route::get('/analytics/export/pdf', [AnalyticsExportController::class, 'pdf']);
 
     // Update calorie goals
     Route::post('/user/calorie-goal', function (Request $request) {
