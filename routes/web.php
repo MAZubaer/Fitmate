@@ -20,6 +20,7 @@ use Illuminate\Foundation\Application;
 use App\Models\AiChat;
 use Illuminate\Support\Str;
 
+
 // Public routes
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -42,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/workouts-data', [WorkoutController::class, 'index']);
     Route::post('/workouts-data', [WorkoutController::class, 'store']);
     Route::put('/workouts-data/{workout}', [WorkoutController::class, 'update']);
+    Route::put('/workouts-data/{workout}/complete', [WorkoutController::class, 'complete']);
+
     Route::delete('/workouts-data/{workout}', [WorkoutController::class, 'destroy']);
 
     // Meals
