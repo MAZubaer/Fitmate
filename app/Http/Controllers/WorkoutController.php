@@ -45,6 +45,7 @@ class WorkoutController extends Controller
             'calories' => 'required|integer|min:0',
             'completed' => 'boolean',
             'duration' => 'nullable|integer|min:0',
+            'muscle_group' => 'nullable|string|max:255'
         ]);
 
         $validated['user_id'] = Auth::id();
@@ -68,6 +69,7 @@ class WorkoutController extends Controller
             'calories' => 'required|integer|min:0',
             'completed' => 'boolean',
             'duration' => 'nullable|integer|min:0',
+            'muscle_group' => 'nullable|string|max:255'
         ]);
 
         $workout->update($validated);

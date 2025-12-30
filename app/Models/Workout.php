@@ -7,5 +7,5 @@ class Workout extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id','name','sets','reps','date','time','calories', 'completed','duration']; 
+    protected $fillable = ['user_id','name','sets','reps','date','time','calories', 'completed','duration','muscle_group']; 
 }

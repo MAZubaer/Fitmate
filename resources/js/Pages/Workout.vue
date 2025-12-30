@@ -15,7 +15,8 @@ const form = ref({
   date: '',
   time: '',
   calories: '',
-  duration: '' 
+  duration: '' ,
+  muscle_group:'' 
 })
 
 const editingId = ref(null)
@@ -149,14 +150,25 @@ const calcTotalCalories = () => {
     .filter(w => w.completed)
     .reduce((sum, w) => sum + Number(w.calories || 0), 0)
 }
+const muscleSummary = ref([]);
+const calcMuscleSummary = () => {
+  const summary = {};
+  workouts.value
+    .filter(w => w.completed)
+    .forEach(w => {
+      const group = w.muscle_group || 'Unknown';
+      summary[group] = (summary[group] || 0) + 1;
+    });
+  muscleSummary.value = Object.entries(summary).map(([group, count]) => ({ group, count }));
+}
+
 
 const resetForm = () => {
-  form.value = { name: '', sets: '', reps: '', date: '', time: '', calories: '', duration: '' }
+  form.value = { name: '', sets: '', reps: '', date: '', time: '', calories: '', duration: '', muscle_group: '' }
 }
 
 onMounted(loadWorkouts)
 </script>
-
 <template>
 <AppLayout>
 <Head title="Workout Tracker" />
@@ -190,26 +202,27 @@ onMounted(loadWorkouts)
 
 
 
-
+   
         <hr class="mb-5 border-gray-300">
          <h3 class="text-lg font-bold mb-2 text-blue-900">To-do List of My Workouts</h3>
 
 
-        <!-- SEARCH INPUT -->
-<div class="mb-3 flex gap-2 items-center">
-  <input
-    v-model="searchQuery"
-    type="text"
-    placeholder="Search workouts..."
-    class="input flex-1"
-  >
-  <button @click="performSearch" class="btn-sm bg-gray-200">Search</button>
-  <!-- Back button -->
-  <button @click="() => { searchQuery=''; filteredWorkouts=workouts }" 
+    <!-- SEARCH INPUT -->
+         <div class="mb-3 flex gap-2 items-center">
+          <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search workouts"
+         class="input flex-1"
+        >
+       <button @click="performSearch" class="btn-sm bg-gray-200">Search</button>
+         <!-- Back button -->
+       <button @click="() => { searchQuery=''; filteredWorkouts=workouts }" 
           class="btn-sm bg-gray-200 text-black">
-    Back
-  </button>
-</div>
+        Back
+        </button>
+    </div>
+
 
 
         <div
@@ -237,6 +250,7 @@ onMounted(loadWorkouts)
                  <span class="badge badge-purple">Reps: {{ w.reps }}</span>
                <span class="badge badge-green">{{ w.calories }} cal</span>
                 <span class="badge badge-blue">Duration: {{ w.duration }} sec</span>
+                <span class="badge badge-purple">Muscle Group: {{ w.muscle_group }}</span>
                </div>
 
               <p class="text-sm text-gray-600 mt-1">
@@ -244,6 +258,7 @@ onMounted(loadWorkouts)
           </p>
 
       </div>
+      
 
             <div class="flex space-x-2">
               <button @click="editWorkout(w)" class="btn-sm">Edit</button>
@@ -276,10 +291,12 @@ onMounted(loadWorkouts)
           </div>
         </div>
       </div>
+      
     </div>
 
+
     <!-- RIGHT: HISTORY -->
-    <div class="bg-gray-50 p-5 rounded-2xl shadow-sm max-h-[800px] overflow-y-auto">
+    <div class="bg-gray-50 p-5 rounded-2xl shadow-sm max-h-[1000px] overflow-y-auto">
       <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 via-blue-500 to-black drop-shadow-lg">
       History (Completed Workouts)
     </h1>
@@ -302,6 +319,7 @@ onMounted(loadWorkouts)
         <span class="badge badge-purple">Reps: {{ h.reps }}</span>
         <span class="badge badge-green">{{ h.calories }} cal</span>
         <span class="badge badge-blue">Duration: {{ h.duration }} sec</span>
+        <span class="badge badge-purple">Muscle Group: {{ h.muscle_group }}</span>
       </div>
       <p class="text-sm text-gray-500 mt-1">{{ h.date }} {{ h.time }}</p>
     </div>
@@ -343,10 +361,7 @@ onMounted(loadWorkouts)
       </div>
 
       <div class="mt-6 grid grid-cols-3 gap-3 text-center">
-        <div class="bg-blue-100 p-3 rounded-xl shadow flex flex-col items-center">
-          <span class="text-lg font-bold">{{ workouts.filter(w => w.completed).length }}</span>
-          <span class="text-sm text-gray-500">Completed</span>
-        </div>
+        
         <div class="bg-blue-100 p-3 rounded-xl shadow flex flex-col items-center">
           <span class="text-lg font-bold">{{ workouts.reduce((sum, w) => sum + Number(w.sets || 0), 0) }}</span>
           <span class="text-sm text-gray-500">Total Sets</span>
@@ -359,10 +374,10 @@ onMounted(loadWorkouts)
         <div class="bg-blue-100 p-3 rounded-xl shadow flex flex-col items-center">
           <span class="text-lg font-bold">{{ workouts.reduce((sum, w) => sum + Number(w.duration || 0), 0) }}</span>
           <span class="text-sm text-gray-500">Total Duration (sec)</span>
-          </div>
-        </div>
-
-      <div class="mt-4">
+          </div> 
+        
+</div>
+<div class="mt-4">
         <button @click="calcTotalCalories" class="btn-sm bg-green-700 text-white hover:bg-green-600">
           Calculate Total Calories Burned
         </button>
@@ -371,10 +386,30 @@ onMounted(loadWorkouts)
           Total Burned: {{ totalHistoryCalories }} cal
         </p>
       </div>
-    </div>
+<hr class="border-t-2 border-gray-400 my-2">
+      <button @click="calcMuscleSummary" class="btn-sm bg-blue-700 text-white hover:bg-blue-600 mt-3 w-full">
+  Show Muscle Group Summary
+</button>
 
+<div v-if="muscleSummary.length" class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+  <div 
+    v-for="m in muscleSummary" 
+    :key="m.group" 
+    class="bg-white p-4 rounded-xl shadow hover:shadow-lg transition-all flex flex-col items-center">
+    <span class="font-bold text-blue-800">{{ m.group }}</span>
+    <span class="mt-1 text-sm text-gray-600">{{ m.count }} exercise{{ m.count > 1 ? 's' : '' }}</span>
   </div>
 </div>
+
+    </div>
+
+</div>
+
+      
+
+  </div>
+
+
 
 <!-- MODAL -->
 <div v-if="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -391,6 +426,19 @@ onMounted(loadWorkouts)
       <input v-model="form.reps" type="number" class="input" placeholder="Reps">
       <input v-model="form.calories" type="number" class="input" placeholder="Calories">
       <input v-model="form.duration" type="number" class="input" placeholder="Duration (sec)">
+      <select v-model="form.muscle_group" class="input">
+        <option value="" disabled selected>Select Muscle Group</option>
+      <option>Chest</option>
+       <option>Back</option>
+      <option>Shoulders</option>
+     <option>Arms</option>
+     <option>Legs</option>
+      <option>Abs/Core</option>
+     <option>Full Body</option>
+    </select>
+
+
+
       <input v-model="form.date" type="date" class="input">
       <input v-model="form.time" type="time" class="input">
     </div>
@@ -482,3 +530,4 @@ strong {
 .animate-slide-in{animation:slide-in .5s ease forwards}
 @keyframes slide-in{0%{transform:translateX(200%);opacity:0}100%{transform:translateX(0);opacity:1}}
 </style>
+
