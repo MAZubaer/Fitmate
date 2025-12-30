@@ -12,6 +12,29 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        // Calories burned per day for last 7 days (sum of completed workouts)
+        $workoutStartDate = now()->subDays(6)->toDateString();
+        $workoutEndDate = now()->toDateString();
+        $workouts = \App\Models\Workout::where('user_id', $user->id)
+            ->where('completed', true)
+            ->whereDate('date', '>=', $workoutStartDate)
+            ->whereDate('date', '<=', $workoutEndDate)
+            ->selectRaw('DATE(date) as date, SUM(calories) as calories')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
+        $calorieBurnedChart = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            $calorieBurnedChart[] = [
+                'date' => $date,
+                'calories' => isset($workouts[$date]) ? (int)$workouts[$date]->calories : 0,
+            ];
+        }
+        $user = Auth::user();
+
         $today = now()->toDateString();
         $weekStart = now()->subDays(6)->toDateString();
 
@@ -76,6 +99,7 @@ class DashboardController extends Controller
             'user' => $user,
             'stats' => $stats,
             'calorieChart' => $calorieChart,
+            'calorieBurnedChart' => $calorieBurnedChart,
         ]);
     }
 }

@@ -14,7 +14,8 @@ const goToExport = () => {
 const props = defineProps({
   user: Object,
   stats: Object,
-  calorieChart: Array //
+  calorieChart: Array,
+  calorieBurnedChart: Array,
 })
 
 // Add methods for quick actions
@@ -142,6 +143,7 @@ const stepChartRef = ref(null);
 const waterHistory = ref([]);
 const waterChartRef = ref(null);
 const calorieChartRef = ref(null);
+const calorieBurnedChartRef = ref(null);
 
 onMounted(async () => {
   try {
@@ -304,6 +306,40 @@ function renderCalorieChart() {
   })
 }
 
+function renderCalorieBurnedChart() {
+  if (!calorieBurnedChartRef.value) return;
+  if (!props.calorieBurnedChart || props.calorieBurnedChart.length === 0) return;
+
+  const ctx = calorieBurnedChartRef.value.getContext('2d');
+  const labels = props.calorieBurnedChart.map(d =>
+    new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })
+  );
+  const data = props.calorieBurnedChart.map(d => d.calories);
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Calories Burned',
+        data,
+        backgroundColor: '#f87171',
+      }]
+    },
+    options: {
+      scales: {
+        x: { title: { display: true, text: 'Day' } },
+        y: { title: { display: true, text: 'Calories Burned' }, beginAtZero: true },
+      },
+      plugins: {
+        legend: { display: false },
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+    },
+  });
+}
+
 
 
 const showStepsModal = ref(false);
@@ -399,7 +435,8 @@ async function fetchWaterHistory() {
 onMounted(() => {
   fetchTodaySteps();
   fetchTodayWater();
-  renderCalorieChart(); //
+  renderCalorieChart();
+  renderCalorieBurnedChart();
 });
 
 function getBmiChartData() {
@@ -446,11 +483,9 @@ function renderBmiChart() {
 <template>
   <AppLayout>
     <Head title="Dashboard" />
-
     <div class="py-12">
       <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-
-        <!-- 🔥 Meal Streak & ⭐ Meal Points (Top Right Pills) -->
+        <!-- Top Pills -->
         <div class="flex justify-end mb-4">
           <div class="flex items-center gap-2">
             <!-- Water Intake -->
@@ -462,34 +497,18 @@ function renderBmiChart() {
               🚶‍♂️ Today's Steps: <span>{{ todaySteps }}</span>
             </div>
             <!-- Meal Streak -->
-            <div
-              class="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-sm font-semibold shadow"
-              title="Meal Streak"
-            >
-              🔥
-              <span>{{ stats.meal_streak }}</span>
-              <span class="hidden sm:inline">day streak</span>
+            <div class="flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-sm font-semibold shadow" title="Meal Streak">
+              🔥 <span>{{ stats.meal_streak }}</span> <span class="hidden sm:inline">day streak</span>
             </div>
-
             <!-- Meal Points -->
-            <div
-              class="flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 text-sm font-semibold shadow"
-              title="Meal Points"
-            >
-              ⭐
-              <span>{{ stats.meal_points }}</span>
-              <span class="hidden sm:inline">pts</span>
+            <div class="flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 text-sm font-semibold shadow" title="Meal Points">
+              ⭐ <span>{{ stats.meal_points }}</span> <span class="hidden sm:inline">pts</span>
             </div>
           </div>
         </div>
-
         <!-- Welcome Section -->
-        <div
-          class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8"
-        >
-          <h1 class="text-4xl font-bold text-white mb-2">
-            Welcome back, {{ user.nickname ? user.nickname : user.name }}! 💪
-          </h1>
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8">
+          <h1 class="text-4xl font-bold text-white mb-2">Welcome back, {{ user.nickname ? user.nickname : user.name }}! 💪</h1>
           <p class="text-indigo-100">Member since {{ stats.joined_date }}</p>
           <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white bg-opacity-10 rounded-lg p-4">
@@ -498,13 +517,10 @@ function renderBmiChart() {
             </div>
             <div class="bg-white bg-opacity-10 rounded-lg p-4">
               <span class="block text-indigo-200 text-sm">Gender</span>
-              <span class="block text-white text-lg font-semibold">
-                {{ user.gender === 'male' ? 'Male' : user.gender === 'female' ? 'Female' : '—' }}
-              </span>
+              <span class="block text-white text-lg font-semibold">{{ user.gender === 'male' ? 'Male' : user.gender === 'female' ? 'Female' : '—' }}</span>
             </div>
           </div>
         </div>
-
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <!-- Total Workouts Card -->
@@ -642,7 +658,6 @@ function renderBmiChart() {
             </div>
           </div>
         </div>
-
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Recent Activity -->
@@ -755,47 +770,43 @@ function renderBmiChart() {
                 📤 Export Health Data
               </button>
 
-
             </div>
           </div>
-
-          <!-- BMI History Chart -->
-          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">BMI History</h2>
+        </div>
+        <!-- Charts Section -->
+        <div class="mt-8">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-green-700 dark:text-green-300 mb-4">Calorie Intake (Last 7 Days)</h2>
             <div style="height:300px;">
-              <canvas ref="bmiChartRef"></canvas>
+              <canvas ref="calorieChartRef"></canvas>
             </div>
           </div>
-
-          <!-- Steps History Chart -->
-          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-red-700 dark:text-red-300 mb-4">Calories Burned (Last 7 Days)</h2>
+            <div style="height:300px;">
+              <canvas ref="calorieBurnedChartRef"></canvas>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold text-yellow-700 dark:text-yellow-300 mb-4">Step History</h2>
             <div style="height:300px;">
               <canvas ref="stepChartRef"></canvas>
             </div>
           </div>
-
-          <!-- Water Intake Chart -->
-          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold text-teal-700 dark:text-teal-300 mb-4">Water Intake</h2>
             <div style="height:300px;">
-              <!-- Placeholder for water intake chart -->
               <canvas ref="waterChartRef"></canvas>
             </div>
           </div>
-        </div>
-
-          <!-- 🔥 Calorie Intake Chart -->
-          <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-green-700 dark:text-green-300 mb-4">
-              Calorie Intake (Last 7 Days)
-            </h2>
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">BMI History</h2>
             <div style="height:300px;">
-              <canvas ref="calorieChartRef"></canvas>
+              <canvas ref="bmiChartRef"></canvas>
             </div>
           </div>
-
-
+        </div>
+        <!-- Modals Section -->
         <!-- BMI Modal -->
         <teleport to="body">
           <div v-if="showBmiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -901,8 +912,8 @@ function renderBmiChart() {
           </div>
         </teleport>
 
-      </div>
-    </div>
+      </div> <!-- End max-w-7xl container -->
+    </div> <!-- End py-12 wrapper -->
   </AppLayout>
 </template>
 
