@@ -4,6 +4,7 @@ import { Head, router } from '@inertiajs/vue3'
 import { ref, onMounted, nextTick } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import { format, parseISO, subDays } from 'date-fns';
+import axios from 'axios';
 Chart.register(...registerables);
 
 const DHAKA_TZ = 'Asia/Dhaka';
@@ -158,6 +159,7 @@ onMounted(async () => {
   await fetchBmiHistory();
   await fetchStepHistory();
   await fetchWaterHistory();
+  await fetchWeather();
 });
 
 function formatDhaka(date, fmt) {
@@ -478,6 +480,73 @@ function renderBmiChart() {
     },
   });
 }
+
+const weather = ref({ temp: null, status: '', humidity: null, icon: '' });
+
+async function fetchWeather() {
+  // Dhaka coordinates
+  const lat = 23.8103;
+  const lon = 90.4125;
+  // Use timezone=Asia/Dhaka to get local time in hourly arrays
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m&timezone=Asia/Dhaka`;
+  try {
+    // Ensure no credentials are sent to avoid CORS issues
+    const res = await axios.get(url, { withCredentials: false });
+    const current = res.data.current_weather;
+    let humidity = null;
+    if (res.data.hourly && res.data.hourly.time && res.data.hourly.relative_humidity_2m && current && current.time) {
+      // current.time is now in Asia/Dhaka local time, so match exactly
+      const idx = res.data.hourly.time.findIndex(t => t === current.time);
+      humidity = idx !== -1 ? res.data.hourly.relative_humidity_2m[idx] : res.data.hourly.relative_humidity_2m[0];
+    }
+    // Weather code to status/icon
+    const weatherCodes = {
+      0: { status: 'Clear', icon: '☀️' },
+      1: { status: 'Mainly Clear', icon: '🌤️' },
+      2: { status: 'Partly Cloudy', icon: '⛅' },
+      3: { status: 'Overcast', icon: '☁️' },
+      45: { status: 'Fog', icon: '🌫️' },
+      48: { status: 'Depositing Rime Fog', icon: '🌫️' },
+      51: { status: 'Drizzle', icon: '🌦️' },
+      53: { status: 'Drizzle', icon: '🌦️' },
+      55: { status: 'Drizzle', icon: '🌦️' },
+      56: { status: 'Freezing Drizzle', icon: '🌧️' },
+      57: { status: 'Freezing Drizzle', icon: '🌧️' },
+      61: { status: 'Rain', icon: '🌧️' },
+      63: { status: 'Rain', icon: '🌧️' },
+      65: { status: 'Rain', icon: '🌧️' },
+      66: { status: 'Freezing Rain', icon: '🌧️' },
+      67: { status: 'Freezing Rain', icon: '🌧️' },
+      71: { status: 'Snow', icon: '❄️' },
+      73: { status: 'Snow', icon: '❄️' },
+      75: { status: 'Snow', icon: '❄️' },
+      77: { status: 'Snow Grains', icon: '❄️' },
+      80: { status: 'Rain Showers', icon: '🌦️' },
+      81: { status: 'Rain Showers', icon: '🌦️' },
+      82: { status: 'Rain Showers', icon: '🌦️' },
+      85: { status: 'Snow Showers', icon: '🌨️' },
+      86: { status: 'Snow Showers', icon: '🌨️' },
+      95: { status: 'Thunderstorm', icon: '⛈️' },
+      96: { status: 'Thunderstorm', icon: '⛈️' },
+      99: { status: 'Thunderstorm', icon: '⛈️' },
+    };
+    const code = current.weathercode;
+    const info = weatherCodes[code] || { status: 'Unknown', icon: '❓' };
+    weather.value = {
+      temp: current.temperature,
+      status: info.status,
+      icon: info.icon,
+      humidity: humidity,
+    };
+  } catch (e) {
+    weather.value = { temp: null, status: 'N/A', icon: '❓', humidity: null };
+  }
+}
+
+onMounted(async () => {
+  // ...existing code...
+  await fetchWeather();
+});
 </script>
 
 <template>
@@ -507,18 +576,31 @@ function renderBmiChart() {
           </div>
         </div>
         <!-- Welcome Section -->
-        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8">
-          <h1 class="text-4xl font-bold text-white mb-2">Welcome back, {{ user.nickname ? user.nickname : user.name }}! 💪</h1>
-          <p class="text-indigo-100">Member since {{ stats.joined_date }}</p>
-          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-white bg-opacity-10 rounded-lg p-4">
-              <span class="block text-indigo-200 text-sm">Age</span>
-              <span class="block text-white text-lg font-semibold">{{ user.age || '—' }}</span>
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 class="text-4xl font-bold text-white mb-2">Welcome back, {{ user.nickname ? user.nickname : user.name }}! 💪</h1>
+            <p class="text-indigo-100">Member since {{ stats.joined_date }}</p>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                <span class="block text-indigo-200 text-sm">Age</span>
+                <span class="block text-white text-lg font-semibold">{{ user.age || '—' }}</span>
+              </div>
+              <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                <span class="block text-indigo-200 text-sm">Gender</span>
+                <span class="block text-white text-lg font-semibold">{{ user.gender === 'male' ? 'Male' : user.gender === 'female' ? 'Female' : '—' }}</span>
+              </div>
             </div>
-            <div class="bg-white bg-opacity-10 rounded-lg p-4">
-              <span class="block text-indigo-200 text-sm">Gender</span>
-              <span class="block text-white text-lg font-semibold">{{ user.gender === 'male' ? 'Male' : user.gender === 'female' ? 'Female' : '—' }}</span>
+          </div>
+          <!-- Weather Widget -->
+          <div class="mt-8 md:mt-0 md:ml-8 flex flex-col items-center justify-center bg-white bg-opacity-20 rounded-lg p-6 min-w-[220px] min-h-[140px] max-w-xs shadow-lg">
+            <div class="flex items-center text-4xl mb-2">{{ weather.icon }}</div>
+            <div class="text-3xl font-bold text-white mb-1">
+              <span v-if="weather.temp !== null">{{ weather.temp }}°C</span>
+              <span v-else>N/A</span>
             </div>
+            <div class="text-lg text-white mb-1">{{ weather.status }}</div>
+            <div class="text-sm text-indigo-100">Humidity: <span v-if="weather.humidity !== null">{{ weather.humidity }}%</span><span v-else>N/A</span></div>
+            <div class="text-xs text-indigo-200 mt-1">Dhaka, BD</div>
           </div>
         </div>
         <!-- Stats Grid -->
