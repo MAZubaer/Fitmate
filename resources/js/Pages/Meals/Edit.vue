@@ -1,71 +1,60 @@
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3';
-import AppLayout from '@/Layouts/AppLayout.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import { useForm } from '@inertiajs/vue3'
+import AppLayout from '@/Layouts/AppLayout.vue'
 
 const props = defineProps({
     meal: Object
-});
+})
 
 const form = useForm({
     name: props.meal.name,
     description: props.meal.description,
     calories: props.meal.calories,
     meal_date: props.meal.meal_date,
-    meal_time: props.meal.meal_time,
-});
+    meal_time: props.meal.meal_time
+})
 
-function submit() {
-    form.put(`/meals/${props.meal.id}`);
+const submit = () => {
+    form.put(`/meals/${props.meal.id}`)
 }
 </script>
 
 <template>
-    <AppLayout title="Edit Meal">
+<AppLayout>
 
-        <div class="max-w-2xl mx-auto mt-10">
-            <h1 class="text-2xl font-bold mb-6">Edit Meal</h1>
+<div class="max-w-3xl mx-auto py-10 px-6">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8">
 
-            <form @submit.prevent="submit" class="space-y-4">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
+            ✏ Edit Meal
+        </h1>
 
-                <div>
-                    <label class="font-semibold">Meal Name</label>
-                    <input v-model="form.name" class="input" required>
-                </div>
+        <form @submit.prevent="submit" class="space-y-5">
 
-                <div>
-                    <label class="font-semibold">Description</label>
-                    <textarea v-model="form.description" class="input"></textarea>
-                </div>
+            <input v-model="form.name"
+                class="w-full p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-700"/>
 
-                <div>
-                    <label class="font-semibold">Calories</label>
-                    <input type="number" v-model="form.calories" class="input">
-                </div>
+            <textarea v-model="form.description"
+                class="w-full p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-700"/>
 
+            <input v-model="form.calories" type="number"
+                class="w-full p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-700"/>
 
-                <div>
-                    <label class="font-semibold">Meal Date</label>
-                    <input type="date" v-model="form.meal_date" class="input">
-                </div>
+            <div class="grid grid-cols-2 gap-4">
+                <input v-model="form.meal_date" type="date"
+                    class="p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-700"/>
+                <input v-model="form.meal_time" type="time"
+                    class="p-3 rounded-lg border dark:bg-gray-800 dark:border-gray-700"/>
+            </div>
 
-                <div>
-                    <label class="font-semibold">Meal Time</label>
-                    <input type="time" v-model="form.meal_time" class="input">
-                </div>
+            <button
+                class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-bold shadow hover:opacity-90">
+                Update Meal
+            </button>
 
-                <PrimaryButton :disabled="form.processing">
-                    Update Meal
-                </PrimaryButton>
+        </form>
+    </div>
+</div>
 
-            </form>
-        </div>
-
-    </AppLayout>
+</AppLayout>
 </template>
-
-<style>
-.input {
-    @apply w-full border-gray-300 rounded mt-1 p-2;
-}
-</style>

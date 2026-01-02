@@ -5,32 +5,40 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Meal;
+use App\Models\Workout;
 use App\Models\StepHistory;
 use App\Models\BmiHistory;
 use App\Models\WaterHistory;
+use Barryvdh\DomPDF\Facade\Pdf;   // ✅ Added for PDF download
 
 class AnalyticsExportController extends Controller
 {
     private function getData(Request $request)
     {
         $user = Auth::user();
+        $from = $request->from . ' 00:00:00';
+        $to   = $request->to . ' 23:59:59';
 
         return [
             'meals' => Meal::where('user_id', $user->id)
                 ->whereBetween('meal_date', [$request->from, $request->to])
                 ->get(),
 
-            'steps' => StepHistory::where('user_id', $user->id)
-                ->whereBetween('date', [$request->from, $request->to])
+            'workouts' => Workout::where('user_id', $user->id)
+                ->whereBetween('created_at', [$from, $to])
                 ->get(),
 
-            'bmi' => BmiHistory::where('user_id', $user->id)
-                ->whereBetween('date', [$request->from, $request->to])
+            'steps' => StepHistory::where('user_id', $user->id)
+                ->whereBetween('created_at', [$from, $to])
                 ->get(),
 
             'water' => WaterHistory::where('user_id', $user->id)
-                ->whereBetween('date', [$request->from, $request->to])
+                ->whereBetween('created_at', [$from, $to])
                 ->get(),
+
+            'bmi' => BmiHistory::where('user_id', $user->id)
+                ->orderByDesc('created_at')
+                ->first()
         ];
     }
 
@@ -38,22 +46,33 @@ class AnalyticsExportController extends Controller
     {
         $data = $this->getData($request);
 
-        $csv = "Date,Type,Name,Calories\n";
+        $csv = "Date,Type,Name,Calories In,Calories Out,Value\n";
 
+        // Meals (Calories In)
         foreach ($data['meals'] as $m) {
-            $csv .= "{$m->meal_date},Meal,{$m->name},{$m->calories}\n";
+            $csv .= "{$m->meal_date},Meal,{$m->name},{$m->calories},,\n";
         }
 
+        // Workouts (Calories Out)
+        foreach ($data['workouts'] as $w) {
+            $csv .= "{$w->created_at->toDateString()},Workout,{$w->name},,{$w->calories},\n";
+        }
+
+        // Steps (no calories)
         foreach ($data['steps'] as $s) {
-            $csv .= "{$s->date},Steps,Steps Burned,{$s->calories_burned}\n";
+            $csv .= "{$s->created_at->toDateString()},Steps,Steps,,," . $s->steps . "\n";
         }
 
-        foreach ($data['bmi'] as $b) {
-            $csv .= "{$b->date},BMI,BMI Value,{$b->bmi}\n";
-        }
-
+        // Water
         foreach ($data['water'] as $w) {
-            $csv .= "{$w->date},Water,Water Intake,{$w->amount}\n";
+            $csv .= "{$w->created_at->toDateString()},Water,Water,,," . $w->amount . "\n";
+        }
+
+        // BMI
+        if ($data['bmi']) {
+            $csv .= "{$data['bmi']->created_at->toDateString()},BMI,BMI,,," . $data['bmi']->bmi . "\n";
+        } else {
+            $csv .= "{$request->to},BMI,BMI,,,Not updated\n";
         }
 
         return response($csv)
@@ -65,9 +84,13 @@ class AnalyticsExportController extends Controller
     {
         $data = $this->getData($request);
 
-        return view('exports.analytics', [
+        $pdf = Pdf::loadView('exports.analytics', [
             'data' => $data,
-            'user' => Auth::user()
+            'user' => Auth::user(),
+            'from' => $request->from,
+            'to'   => $request->to
         ]);
+
+        return $pdf->download('health_report_' . $request->from . '_to_' . $request->to . '.pdf');
     }
 }

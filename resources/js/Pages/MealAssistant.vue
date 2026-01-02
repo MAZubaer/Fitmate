@@ -52,6 +52,20 @@ const newChat = () => {
   scrollToBottom()
 }
 
+const deleteChat = async (session) => {
+  if (!confirm('Delete this chat?')) return
+
+  await axios.delete('/ai/chat/' + session)
+
+  chats.value = chats.value.filter(c => c.session_id !== session)
+
+  if (sessionId.value === session) {
+    sessionId.value = null
+    messages.value = []
+    localStorage.removeItem(STORAGE_KEY)
+  }
+}
+
 const sendMessage = async () => {
   if (!input.value.trim()) return
 
@@ -125,14 +139,27 @@ onMounted(async () => {
       </div>
 
       <div class="flex-1 overflow-y-auto">
-        <div v-for="chat in chats"
+        <div
+          v-for="chat in chats"
           :key="chat.session_id"
-          @click="loadChat(chat.session_id)"
-          class="px-5 py-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition">
-          <div class="text-sm truncate">{{ chat.user_message }}</div>
-          <div class="text-xs text-white/40 mt-1">
-            {{ new Date(chat.created_at).toLocaleString() }}
+          class="group flex items-center justify-between px-5 py-4 border-b border-white/5 hover:bg-white/5 transition"
+        >
+          <div
+            class="flex-1 cursor-pointer"
+            @click="loadChat(chat.session_id)"
+          >
+            <div class="text-sm truncate">{{ chat.user_message }}</div>
+            <div class="text-xs text-white/40 mt-1">
+              {{ new Date(chat.created_at).toLocaleString() }}
+            </div>
           </div>
+
+          <button
+            @click.stop="deleteChat(chat.session_id)"
+            class="opacity-0 group-hover:opacity-100 transition text-red-400 hover:text-red-600 text-sm ml-2"
+          >
+            🗑
+          </button>
         </div>
       </div>
     </div>
@@ -142,7 +169,7 @@ onMounted(async () => {
 
       <div class="px-10 py-6 border-b border-white/10 text-white">
         <h1 class="text-2xl font-semibold">FitMate AI Coach</h1>
-        <p class="text-sm text-white/60">Your personal meal assistant</p>
+        <p class="text-sm text-white/60">Your personal fitness assistant</p>
       </div>
 
       <div ref="chatContainer" class="flex-1 overflow-y-auto px-10 py-8 space-y-6">
@@ -166,7 +193,7 @@ onMounted(async () => {
 
         <div v-if="messages.length === 0 && !loading"
           class="text-center text-white/40 mt-24 text-sm">
-          Ask your AI coach about meals, calories, or diet plans
+          Ask anything about workouts, meals, health, or fitness 💪
         </div>
       </div>
 
@@ -174,7 +201,7 @@ onMounted(async () => {
         <input
           v-model="input"
           @keyup.enter="sendMessage"
-          placeholder="Ask your AI meal coach..."
+          placeholder="Ask your FitMate AI..."
           class="flex-1 bg-black/30 text-white placeholder-white/40 border border-white/10 rounded-xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-[#4FD1C5]" />
 
         <button

@@ -88,6 +88,15 @@ Route::middleware('auth')->group(function () {
             ->get();
     });
 
+    Route::delete('/ai/chat/{session}', function ($session) {
+    \App\Models\AiChat::where('user_id', auth()->id())
+        ->where('session_id', $session)
+        ->delete();
+
+    return response()->json(['success' => true]);
+    });
+
+
     Route::get('/analytics/export', fn () => Inertia::render('AnalyticsExport'));
     Route::get('/analytics/export/csv', [AnalyticsExportController::class, 'csv']);
     Route::get('/analytics/export/pdf', [AnalyticsExportController::class, 'pdf']);
