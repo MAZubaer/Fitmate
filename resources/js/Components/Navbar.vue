@@ -1,21 +1,35 @@
 <script setup>
 import { Link, usePage, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
 
 const showDropdown = ref(false);
 const currentPage = computed(() => usePage().component);
 
 const form = useForm({});
-
 const submitLogout = () => {
     form.post(route('logout'));
 };
 
-// 🔥 Added Meals here
+// 🔔 Notification count
+const unread = ref(0);
+
+const fetchUnread = async () => {
+    try {
+        const res = await axios.get('/api/notifications/unread-count');
+        unread.value = res.data;
+    } catch (e) {
+        unread.value = 0;
+    }
+};
+
+onMounted(fetchUnread);
+
+// 🔥 Navigation Items
 const navItems = [
     { label: 'Dashboard', route: 'dashboard', icon: '📊' },
     { label: 'Workout', route: 'workout.index', icon: '🏋️' },
-    { label: 'Meals', route: 'meals.index', icon: '🍛' },   // <-- ADDED
+    { label: 'Meals', route: 'meals.index', icon: '🍛' },
     { label: 'Meal Assistant', route: 'meal.assistant', icon: '🍽️' },
     { label: 'Notifications', route: 'notifications', icon: '🔔' },
 ];
@@ -51,7 +65,19 @@ const navItems = [
                                 ),
                             }"
                         >
-                            <span>{{ item.icon }}</span>
+                            <!-- ICON -->
+                            <span class="relative">
+                                {{ item.icon }}
+
+                                <!-- 🔔 Badge -->
+                                <span
+                                    v-if="item.label === 'Notifications' && unread > 0"
+                                    class="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full"
+                                >
+                                    {{ unread }}
+                                </span>
+                            </span>
+
                             <span>{{ item.label }}</span>
                         </Link>
                     </template>
@@ -138,7 +164,15 @@ const navItems = [
                             ),
                         }"
                     >
-                        <span>{{ item.icon }}</span>
+                        <span class="relative">
+                            {{ item.icon }}
+                            <span
+                                v-if="item.label === 'Notifications' && unread > 0"
+                                class="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full"
+                            >
+                                {{ unread }}
+                            </span>
+                        </span>
                         <span>{{ item.label }}</span>
                     </Link>
                 </template>

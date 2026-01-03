@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Meal;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -32,7 +33,7 @@ class MealController extends Controller
 
     /**
      * Store a newly created meal in storage.
-     * ✅ UPDATED WITH STREAK + POINTS LOGIC
+     * ✅ Includes streak, points & notifications
      */
     public function store(Request $request)
     {
@@ -48,7 +49,7 @@ class MealController extends Controller
         $today = now()->toDateString();
 
         // Save meal
-        Meal::create([
+        $meal = Meal::create([
             'user_id' => $user->id,
             'name' => $request->name,
             'description' => $request->description,
@@ -57,11 +58,20 @@ class MealController extends Controller
             'meal_time' => $request->meal_time,
         ]);
 
+        // 🔔 Create meal notification
+        if ($request->meal_time) {
+            Notification::create([
+                'user_id' => $user->id,
+                'message' => "🍽️ Time for your meal: {$request->name}",
+                'scheduled_at' => ($request->meal_date ?? $today) . ' ' . $request->meal_time
+            ]);
+        }
+
         // 🔥 STREAK LOGIC
         if ($user->last_meal_date === now()->subDay()->toDateString()) {
-            $user->meal_streak += 1; // continue streak
+            $user->meal_streak += 1;
         } else {
-            $user->meal_streak = 1; // reset streak
+            $user->meal_streak = 1;
         }
 
         // ⭐ POINTS LOGIC

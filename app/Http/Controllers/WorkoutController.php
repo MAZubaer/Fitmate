@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Workout;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +18,6 @@ class WorkoutController extends Controller
     public function index()
     {
         try {
-            // Log incoming headers and cookie keys to help debug auth/session issues
             Log::debug('WorkoutController@index called', [
                 'auth_id' => Auth::id(),
                 'headers' => request()->headers->all(),
@@ -30,7 +30,10 @@ class WorkoutController extends Controller
                 ->get();
         } catch (\Exception $e) {
             Log::error('WorkoutController@index exception', ['message' => $e->getMessage()]);
-            return response()->json(['error' => 'Failed to fetch workouts', 'message' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Failed to fetch workouts',
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -49,7 +52,16 @@ class WorkoutController extends Controller
         ]);
 
         $validated['user_id'] = Auth::id();
+
+        // Save workout
         $workout = Workout::create($validated);
+
+        // 🔔 Create workout notification
+        Notification::create([
+            'user_id' => Auth::id(),
+            'message' => "🏋️ Time for your workout: {$request->name}",
+            'scheduled_at' => $request->date . ' ' . $request->time
+        ]);
 
         return response()->json($workout, 201);
     }
@@ -57,7 +69,7 @@ class WorkoutController extends Controller
     public function update(Request $request, Workout $workout)
     {
         if ($workout->user_id !== Auth::id()) {
-            return response()->json(['message'=>'Unauthorized'], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $validated = $request->validate([
@@ -80,22 +92,22 @@ class WorkoutController extends Controller
     public function destroy(Workout $workout)
     {
         if ($workout->user_id !== Auth::id()) {
-            return response()->json(['message'=>'Unauthorized'], 403);
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $workout->delete();
         return response()->json(['message' => 'Deleted']);
     }
+
     public function complete(Workout $workout)
     {
-    if ($workout->user_id !== Auth::id()) {
-        return response()->json(['message'=>'Unauthorized'], 403);
+        if ($workout->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $workout->completed = true;
+        $workout->save();
+
+        return response()->json($workout);
     }
-
-    $workout->completed = true;
-    $workout->save();
-
-    return response()->json($workout);
-    }
-
 }
