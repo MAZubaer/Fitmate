@@ -117,14 +117,50 @@ class MealController extends Controller
 
     /**
      * Remove the specified meal from storage.
+     * ✅ Correctly updates points & streak
      */
     public function destroy(Meal $meal)
     {
         $this->authorizeMeal($meal);
 
+        $user = auth()->user();
+
+        // Delete meal
         $meal->delete();
 
-        return redirect()->route('meals.index')->with('success', 'Meal deleted.');
+        // ⭐ Deduct 10 points safely
+        $user->meal_points = max(0, $user->meal_points - 10);
+
+        // 🔥 Recalculate streak
+        $dates = Meal::where('user_id', $user->id)
+            ->select('meal_date')
+            ->distinct()
+            ->orderBy('meal_date', 'desc')
+            ->pluck('meal_date');
+
+        $streak = 0;
+        $date = now()->toDateString();
+
+        foreach ($dates as $mealDate) {
+            if ($mealDate == $date) {
+                $streak++;
+                $date = date('Y-m-d', strtotime($date . ' -1 day'));
+            } else {
+                break;
+            }
+        }
+
+        if ($dates->count() > 0) {
+            $user->last_meal_date = $dates->first();
+        } else {
+            $user->last_meal_date = null;
+        }
+
+        $user->meal_streak = $streak;
+        $user->save();
+
+        return redirect()->route('meals.index')
+            ->with('success', 'Meal deleted. Points & streak updated.');
     }
 
     /**
