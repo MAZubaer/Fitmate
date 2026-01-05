@@ -5,17 +5,19 @@
 FROM php:8.2.12-fpm-alpine
 
 
+
 # Install system dependencies
 RUN apk add --no-cache bash sqlite sqlite-dev libpng libpng-dev libjpeg-turbo-dev libwebp-dev libxpm-dev freetype-dev oniguruma-dev libzip-dev zip unzip git curl
 
-# Install Node.js 24.x (official binaries)
+# Install Node.js 24.x (official binaries) and ensure it's available before npm usage
 ENV NODE_VERSION=24.4.1
 RUN curl -fsSLO https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.xz \
 	&& tar -xJf node-v$NODE_VERSION-linux-x64.tar.xz -C /usr/local --strip-components=1 \
 	&& rm node-v$NODE_VERSION-linux-x64.tar.xz \
-	&& ln -s /usr/local/bin/node /usr/bin/node \
-	&& ln -s /usr/local/bin/npm /usr/bin/npm \
-	&& ln -s /usr/local/bin/npx /usr/bin/npx
+	&& ln -sf /usr/local/bin/node /usr/bin/node \
+	&& ln -sf /usr/local/bin/npm /usr/bin/npm \
+	&& ln -sf /usr/local/bin/npx /usr/bin/npx \
+	&& node -v && npm -v
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_sqlite mbstring zip exif pcntl bcmath gd
