@@ -1,21 +1,11 @@
 # Dockerfile for Laravel + Vue + Inertia + SQLite (with your versions)
 
-# 1. Build frontend assets
-FROM node:24.4.1 AS node-build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY resources/ resources/
-COPY vite.config.js ./
-COPY jsconfig.json ./
-COPY public/ public/
-RUN npm run build
 
-# 2. Build PHP/Laravel backend
+# 1. Build PHP/Laravel backend and frontend assets
 FROM php:8.2.12-fpm-alpine
 
 # Install system dependencies
-RUN apk add --no-cache bash sqlite sqlite-dev libpng libpng-dev libjpeg-turbo-dev libwebp-dev libxpm-dev freetype-dev oniguruma-dev libzip-dev zip unzip git curl
+RUN apk add --no-cache bash sqlite sqlite-dev libpng libpng-dev libjpeg-turbo-dev libwebp-dev libxpm-dev freetype-dev oniguruma-dev libzip-dev zip unzip git curl nodejs npm
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_sqlite mbstring zip exif pcntl bcmath gd
@@ -29,11 +19,11 @@ WORKDIR /app
 # Copy backend files
 COPY . .
 
-# Copy built frontend assets
-COPY --from=node-build /app/public/build ./public/build
-
-# Install PHP dependencies
+# Install PHP dependencies (including Ziggy)
 RUN composer install --no-dev --optimize-autoloader
+
+# Install Node dependencies and build frontend
+RUN npm install && npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
