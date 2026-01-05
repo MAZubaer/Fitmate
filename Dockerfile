@@ -1,7 +1,7 @@
-# Dockerfile for Laravel + Vue + Inertia + SQLite (production-ready)
+# Dockerfile for Laravel + Vue + Inertia + SQLite (with your versions)
 
 # 1. Build frontend assets
-FROM node:18 AS node-build
+FROM node:24.4.1 AS node-build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -12,7 +12,7 @@ COPY public/ public/
 RUN npm run build
 
 # 2. Build PHP/Laravel backend
-FROM php:8.2-fpm-alpine
+FROM php:8.2.12-fpm-alpine
 
 # Install system dependencies
 RUN apk add --no-cache bash sqlite sqlite-dev libpng libpng-dev libjpeg-turbo-dev libwebp-dev libxpm-dev freetype-dev oniguruma-dev libzip-dev zip unzip git curl
