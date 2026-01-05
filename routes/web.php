@@ -23,7 +23,7 @@ use App\Http\Controllers\WaterController;
 use App\Http\Controllers\WaterHistoryController;
 use App\Http\Controllers\AnalyticsExportController;
 use App\Http\Controllers\NotificationController;
-
+use App\Http\Controllers\MoodController; // 👈 ADDED
 
 /*
 |--------------------------------------------------------------------------
@@ -179,6 +179,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/water', [WaterController::class, 'store']);
     Route::get('/water/today', [WaterController::class, 'today']);
     Route::get('/water-history', [WaterHistoryController::class, 'index']);
+
+    // 🧩 Mood Tracker
+    Route::post('/mood', [MoodController::class, 'store']);
+    Route::get('/mood/today', [MoodController::class, 'today']);
 });
 
 require __DIR__ . '/auth.php';

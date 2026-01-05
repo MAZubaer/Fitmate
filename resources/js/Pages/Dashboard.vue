@@ -146,6 +146,26 @@ const waterChartRef = ref(null);
 const calorieChartRef = ref(null);
 const calorieBurnedChartRef = ref(null);
 
+// -------------------
+// Mood Tracker
+// -------------------
+const todayMood = ref(null);
+
+async function fetchTodayMood() {
+  try {
+    const res = await axios.get('/mood/today');
+    todayMood.value = res.data.mood;
+  } catch {
+    todayMood.value = null;
+  }
+}
+
+async function saveMood(mood) {
+  await axios.post('/mood', { mood });
+  todayMood.value = mood;
+}
+
+
 onMounted(async () => {
   try {
     const res = await axios.get('/recent-activity');
@@ -437,9 +457,11 @@ async function fetchWaterHistory() {
 onMounted(() => {
   fetchTodaySteps();
   fetchTodayWater();
+  fetchTodayMood();      // ← ADD THIS LINE
   renderCalorieChart();
   renderCalorieBurnedChart();
 });
+
 
 function getBmiChartData() {
   const last7 = getLast7Days();
@@ -580,6 +602,39 @@ onMounted(async () => {
           <div>
             <h1 class="text-4xl font-bold text-white mb-2">Welcome back, {{ user.nickname ? user.nickname : user.name }}! 💪</h1>
             <p class="text-indigo-100">Member since {{ stats.joined_date }}</p>
+            <div class="mt-4 bg-white bg-opacity-10 rounded-lg p-4 max-w-md">
+  <div class="text-indigo-100 font-semibold mb-2">
+    How are you feeling today?
+  </div>
+
+  <div v-if="!todayMood" class="flex gap-3">
+    <button @click="saveMood('HAPPY')" class="px-3 py-1 rounded bg-white bg-opacity-20 text-white hover:bg-opacity-30">
+      😄 Happy
+    </button>
+
+    <button @click="saveMood('NEUTRAL')" class="px-3 py-1 rounded bg-white bg-opacity-20 text-white hover:bg-opacity-30">
+      😐 Neutral
+    </button>
+
+    <button @click="saveMood('STRESSED')" class="px-3 py-1 rounded bg-white bg-opacity-20 text-white hover:bg-opacity-30">
+      😞 Stressed
+    </button>
+  </div>
+
+  <div v-else class="flex justify-between items-center text-white">
+    <div>
+      Today’s mood:
+      <span v-if="todayMood === 'HAPPY'">😄 Happy</span>
+      <span v-else-if="todayMood === 'NEUTRAL'">😐 Neutral</span>
+      <span v-else>😞 Stressed</span>
+    </div>
+
+    <button @click="todayMood = null" class="text-indigo-200 underline text-sm">
+      Change
+    </button>
+  </div>
+</div>
+
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="bg-white bg-opacity-10 rounded-lg p-4">
                 <span class="block text-indigo-200 text-sm">Age</span>
