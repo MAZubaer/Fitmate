@@ -35,10 +35,40 @@ const bmiError = ref('');
 const bmiSuccess = ref('');
 const bmiStatus = ref('');
 const bmiMessage = ref('');
-const showGoalModal = ref(false)
-const calorieGoal = ref(props.stats.daily_goal)//
-const goalSuccess = ref('')
+// const showGoalModal = ref(false)
+// const calorieGoal = ref(props.stats.daily_goal)//
+// const goalSuccess = ref('')
 
+
+/* ---------------- Calorie Goal ---------------- */
+
+const showGoalModal = ref(false)
+const calorieGoal = ref(props.stats.daily_goal)
+const goalSuccess = ref('')
+const goalError = ref('')
+
+async function updateGoal() {
+  goalSuccess.value = ''
+  goalError.value = ''
+
+  try {
+    const res = await axios.post('/calorie-goal', {
+      calorie_goal: calorieGoal.value
+    })
+
+    // update live stats
+    props.stats.daily_goal = res.data.goal
+    props.stats.goal_percent = Math.round(
+      (props.stats.today_calories / res.data.goal) * 100
+    )
+
+    goalSuccess.value = 'Goal saved successfully!'
+    setTimeout(() => showGoalModal.value = false, 800)
+
+  } catch {
+    goalError.value = 'Failed to save goal'
+  }
+}
 
 
 const bmiMessages = {
@@ -129,11 +159,11 @@ async function fetchBmiHistory() {
   }
 }
 
-async function updateGoal() {
-  await axios.post('/user/calorie-goal', { goal: calorieGoal.value })
-  goalSuccess.value = 'Goal updated!'
-  setTimeout(() => window.location.reload(), 800)
-}
+// async function updateGoal() {
+//   await axios.post('/user/calorie-goal', { goal: calorieGoal.value })
+//   goalSuccess.value = 'Goal updated!'
+//   setTimeout(() => window.location.reload(), 800)
+// }
 
 const recentWorkouts = ref([]);
 const recentLoading = ref(true);

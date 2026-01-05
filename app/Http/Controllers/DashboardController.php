@@ -2,20 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Models\Meal;
+use App\Models\Workout;
 
 class DashboardController extends Controller
 {
+    /**
+     * Dashboard page
+     */
     public function index()
     {
         $user = Auth::user();
 
-        // Calories burned per day for last 7 days (sum of completed workouts)
+        /* -------------------------------
+           Calories Burned (Last 7 Days)
+        --------------------------------*/
         $workoutStartDate = now()->subDays(6)->toDateString();
-        $workoutEndDate = now()->toDateString();
-        $workouts = \App\Models\Workout::where('user_id', $user->id)
+        $workoutEndDate   = now()->toDateString();
+
+        $workouts = Workout::where('user_id', $user->id)
             ->where('completed', true)
             ->whereDate('date', '>=', $workoutStartDate)
             ->whereDate('date', '<=', $workoutEndDate)
@@ -29,34 +37,36 @@ class DashboardController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->toDateString();
             $calorieBurnedChart[] = [
-                'date' => $date,
-                'calories' => isset($workouts[$date]) ? (int)$workouts[$date]->calories : 0,
+                'date'     => $date,
+                'calories' => isset($workouts[$date]) ? (int) $workouts[$date]->calories : 0,
             ];
         }
-        $user = Auth::user();
 
-        $today = now()->toDateString();
+        /* -------------------------------
+           Calories Eaten
+        --------------------------------*/
+        $today     = now()->toDateString();
         $weekStart = now()->subDays(6)->toDateString();
 
-        // Calories today
         $todayCalories = Meal::where('user_id', $user->id)
             ->whereDate('meal_date', $today)
             ->sum('calories');
 
-        // Calories this week
         $weeklyCalories = Meal::where('user_id', $user->id)
             ->whereDate('meal_date', '>=', $weekStart)
             ->sum('calories');
 
-        // Daily calorie goal
+        /* -------------------------------
+           Daily Goal
+        --------------------------------*/
         $dailyGoal = $user->calorie_goal ?? 2200;
 
-        // Calories per day for last 7 days (today + previous 6 days, always 7 days, fill missing with 0)
-        $startDate = now()->subDays(6)->toDateString();
-        $endDate = now()->toDateString();
+        /* -------------------------------
+           Intake Chart (Last 7 Days)
+        --------------------------------*/
         $meals = Meal::where('user_id', $user->id)
-            ->whereDate('meal_date', '>=', $startDate)
-            ->whereDate('meal_date', '<=', $endDate)
+            ->whereDate('meal_date', '>=', $weekStart)
+            ->whereDate('meal_date', '<=', $today)
             ->selectRaw('DATE(meal_date) as date, SUM(calories) as calories')
             ->groupBy('date')
             ->orderBy('date')
@@ -67,12 +77,14 @@ class DashboardController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->toDateString();
             $calorieChart[] = [
-                'date' => $date,
-                'calories' => isset($meals[$date]) ? (int)$meals[$date]->calories : 0,
+                'date'     => $date,
+                'calories' => isset($meals[$date]) ? (int) $meals[$date]->calories : 0,
             ];
         }
 
-        // Goal logic (5 goals per week)
+        /* -------------------------------
+           Weekly Goal Progress
+        --------------------------------*/
         $goalsCompleted = 0;
         foreach ($calorieChart as $day) {
             if ($day['calories'] >= $dailyGoal) {
@@ -80,26 +92,46 @@ class DashboardController extends Controller
             }
         }
 
+        /* -------------------------------
+           Dashboard Stats
+        --------------------------------*/
         $stats = [
-            'total_workouts' => 0, // teammate safe
-            'total_calories' => $weeklyCalories,
-            'today_calories' => $todayCalories,
-            'daily_goal' => $dailyGoal,
-            'goal_percent' => $dailyGoal > 0 
-                ? round(($todayCalories / $dailyGoal) * 100)
-                : 0,
+            'total_workouts'  => 0, // placeholder
+            'total_calories'  => $weeklyCalories,
+            'today_calories'  => $todayCalories,
+            'daily_goal'      => $dailyGoal,
+            'goal_percent'    => $dailyGoal > 0 ? round(($todayCalories / $dailyGoal) * 100) : 0,
             'goals_completed' => $goalsCompleted,
-            'this_month' => date('F Y'),
-            'joined_date' => $user->created_at->format('M d, Y'),
-            'meal_streak' => $user->meal_streak ?? 0,
-            'meal_points' => $user->meal_points ?? 0,
+            'this_month'      => date('F Y'),
+            'joined_date'     => $user->created_at->format('M d, Y'),
+            'meal_streak'     => $user->meal_streak ?? 0,
+            'meal_points'    => $user->meal_points ?? 0,
         ];
 
         return Inertia::render('Dashboard', [
-            'user' => $user,
-            'stats' => $stats,
-            'calorieChart' => $calorieChart,
-            'calorieBurnedChart' => $calorieBurnedChart,
+            'user'              => $user,
+            'stats'             => $stats,
+            'calorieChart'      => $calorieChart,
+            'calorieBurnedChart'=> $calorieBurnedChart,
+        ]);
+    }
+
+    /**
+     * Save Daily Calorie Goal
+     */
+    public function setCalorieGoal(Request $request)
+    {
+        $request->validate([
+            'calorie_goal' => 'required|integer|min:500|max:10000',
+        ]);
+
+        $user = Auth::user();
+        $user->calorie_goal = $request->calorie_goal;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'goal' => $user->calorie_goal,
         ]);
     }
 }

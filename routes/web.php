@@ -38,6 +38,10 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+    
+Route::post('/calorie-goal', [DashboardController::class, 'setCalorieGoal'])
+    ->middleware('auth');
+
 
 
 /*
@@ -75,6 +79,8 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('meals', MealController::class);
     Route::resource('meals', MealController::class); // kept for teammate safety
+
+    
 
     /*
     |--------------------------------------------------------------------------
