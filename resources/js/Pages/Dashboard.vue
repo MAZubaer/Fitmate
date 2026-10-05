@@ -2,10 +2,9 @@
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
 import { ref, onMounted, nextTick } from 'vue';
-import { Chart, registerables } from 'chart.js';
+import Chart from 'chart.js/auto';
 import { format, parseISO, subDays } from 'date-fns';
 import axios from 'axios';
-Chart.register(...registerables);
 
 const DHAKA_TZ = 'Asia/Dhaka';
 const goToExport = () => {

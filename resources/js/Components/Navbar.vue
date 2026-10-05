@@ -30,7 +30,7 @@ const navItems = [
     { label: 'Dashboard', route: 'dashboard', icon: '📊' },
     { label: 'Workout', route: 'workout.index', icon: '🏋️' },
     { label: 'Meals', route: 'meals.index', icon: '🍛' },
-    { label: 'Meal Assistant', route: 'meal.assistant', icon: '🍽️' },
+    { label: 'AI Assistant', route: 'meal.assistant', icon: '🍽️' },
     { label: 'Notifications', route: 'notifications', icon: '🔔' },
 ];
 </script>
