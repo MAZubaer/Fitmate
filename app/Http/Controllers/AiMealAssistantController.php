@@ -81,7 +81,7 @@ class AiMealAssistantController extends Controller
             'Authorization' => 'Bearer ' . config('services.groq.key'),
             'Content-Type'  => 'application/json',
         ])->post('https://api.groq.com/openai/v1/chat/completions', [
-            'model' => 'llama-3.3-70b-versatile',
+            'model' => 'openai/gpt-oss-20b',
             'messages' => [
                 [
                     'role' => 'system',

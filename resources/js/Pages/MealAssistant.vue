@@ -2,6 +2,8 @@
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { ref, onMounted, nextTick } from 'vue'
 import axios from 'axios'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 const input = ref('')
 const chats = ref([])
@@ -11,6 +13,11 @@ const sessionId = ref(null)
 const chatContainer = ref(null)
 
 const STORAGE_KEY = 'fitmate_ai_last_session'
+
+const renderMarkdown = (text) => DOMPurify.sanitize(marked.parse(text || '', {
+  breaks: true,
+  gfm: true,
+}))
 
 const getScrollParent = (el) => {
   while (el) {
@@ -183,7 +190,8 @@ onMounted(async () => {
             :class="msg.role === 'user'
               ? 'bg-[#1B3C53] text-white'
               : 'bg-white/10 text-white border border-white/10'">
-            {{ msg.text }}
+            <div v-if="msg.role === 'ai'" class="ai-markdown" v-html="renderMarkdown(msg.text)"></div>
+            <span v-else>{{ msg.text }}</span>
           </div>
         </div>
 
@@ -216,3 +224,100 @@ onMounted(async () => {
   </div>
 </AppLayout>
 </template>
+
+<style scoped>
+.ai-markdown :deep(h1),
+.ai-markdown :deep(h2),
+.ai-markdown :deep(h3) {
+  margin: 0.9rem 0 0.45rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.ai-markdown :deep(h1) {
+  font-size: 1.15rem;
+}
+
+.ai-markdown :deep(h2) {
+  font-size: 1.05rem;
+}
+
+.ai-markdown :deep(h3) {
+  font-size: 0.95rem;
+}
+
+.ai-markdown :deep(p) {
+  margin: 0.55rem 0;
+}
+
+.ai-markdown :deep(ul),
+.ai-markdown :deep(ol) {
+  margin: 0.55rem 0;
+  padding-left: 1.35rem;
+}
+
+.ai-markdown :deep(ul) {
+  list-style: disc;
+}
+
+.ai-markdown :deep(ol) {
+  list-style: decimal;
+}
+
+.ai-markdown :deep(li) {
+  margin: 0.25rem 0;
+}
+
+.ai-markdown :deep(strong) {
+  color: #99f6e4;
+  font-weight: 700;
+}
+
+.ai-markdown :deep(table) {
+  display: block;
+  max-width: 100%;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.ai-markdown :deep(th),
+.ai-markdown :deep(td) {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+}
+
+.ai-markdown :deep(th) {
+  background: rgba(79, 209, 197, 0.16);
+  font-weight: 700;
+}
+
+.ai-markdown :deep(code) {
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.12rem 0.3rem;
+  font-size: 0.85em;
+}
+
+.ai-markdown :deep(pre) {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75rem;
+}
+
+.ai-markdown :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.ai-markdown :deep(blockquote) {
+  margin: 0.75rem 0;
+  border-left: 3px solid #4fd1c5;
+  padding-left: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+</style>
