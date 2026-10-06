@@ -31,6 +31,7 @@ RUN apk add --no-cache \
         libwebp \
         libzip \
         oniguruma \
+    postgresql-libs \
     && apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
         freetype-dev \
@@ -40,6 +41,7 @@ RUN apk add --no-cache \
         libwebp-dev \
         libzip-dev \
         oniguruma-dev \
+        postgresql-dev \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -50,7 +52,7 @@ RUN apk add --no-cache \
         gd \
         mbstring \
         pcntl \
-        pdo_mysql \
+        pdo_pgsql \
         zip \
     && apk del .build-deps
 
