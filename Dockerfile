@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY composer.json composer.lock ./
 COPY app bootstrap config database public resources routes artisan .env.example ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 
 # Build frontend assets with a native Alpine Node image.
@@ -63,6 +63,8 @@ COPY --from=vendor /app /app
 COPY --from=frontend /app/public/build /app/public/build
 
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && rm -f bootstrap/cache/*.php \
+    && php artisan package:discover --ansi \
     && chown -R www-data:www-data storage bootstrap/cache
 
 ENV APP_ENV=production
