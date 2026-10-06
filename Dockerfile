@@ -1,3 +1,13 @@
+# Install production PHP dependencies with the committed Composer lockfile.
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+COPY app bootstrap config database public resources routes artisan .env.example ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+
 # Build frontend assets with a native Alpine Node image.
 FROM node:22-alpine AS frontend
 
@@ -7,17 +17,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+COPY --from=vendor /app/vendor ./vendor
 RUN npm run build
-
-
-# Install production PHP dependencies with the committed Composer lockfile.
-FROM composer:2 AS vendor
-
-WORKDIR /app
-
-COPY composer.json composer.lock ./
-COPY app bootstrap config database public resources routes artisan .env.example ./
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 
 # Runtime image used by Render.
