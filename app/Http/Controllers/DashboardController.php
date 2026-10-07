@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $workoutEndDate   = now()->toDateString();
 
         $workouts = Workout::where('user_id', $user->id)
-            ->where('completed', true)
+            ->whereRaw('completed = TRUE')
             ->whereDate('date', '>=', $workoutStartDate)
             ->whereDate('date', '<=', $workoutEndDate)
             ->selectRaw('DATE(date) as date, SUM(calories) as calories')
