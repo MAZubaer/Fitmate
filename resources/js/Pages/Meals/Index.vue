@@ -10,16 +10,16 @@ defineProps({
 <template>
 <AppLayout>
 
-<div class="max-w-7xl mx-auto px-6 py-10">
+<div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
 
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">
+    <div class="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white sm:text-3xl">
             🍽 My Meals
         </h1>
 
         <Link
             href="/meals/create"
-            class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white px-6 py-3 rounded-xl shadow font-semibold"
+            class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 font-semibold text-white shadow hover:opacity-90 sm:w-auto sm:px-6"
         >
             + Add Meal
         </Link>
@@ -31,10 +31,10 @@ defineProps({
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div v-for="meal in meals" :key="meal.id"
-             class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+             class="min-w-0 rounded-2xl border border-gray-100 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-900 sm:p-6">
 
             <div class="flex justify-between items-start">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-white">
+                <h2 class="min-w-0 break-words text-xl font-bold text-gray-800 dark:text-white">
                     {{ meal.name }}
                 </h2>
                 <span class="text-sm text-gray-500">

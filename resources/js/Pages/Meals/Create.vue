@@ -17,8 +17,8 @@ const submit = () => {
 
 <template>
 <AppLayout>
-  <div class="min-h-screen bg-gray-100 flex items-center justify-center px-6">
-    <div class="w-full max-w-3xl bg-gradient-to-br from-[#0F2027] via-[#203A43] to-[#2C5364] rounded-3xl shadow-2xl p-10 text-white">
+  <div class="flex min-h-screen items-center justify-center bg-gray-100 px-3 py-6 sm:px-6 sm:py-10">
+    <div class="w-full max-w-3xl rounded-3xl bg-gradient-to-br from-[#0F2027] via-[#203A43] to-[#2C5364] p-5 text-white shadow-2xl sm:p-10">
 
       <h1 class="text-3xl font-bold mb-8 flex items-center gap-3">
         ➕ Add New Meal
@@ -43,7 +43,7 @@ const submit = () => {
           placeholder="Calories"
           class="w-full px-5 py-4 rounded-xl bg-black/30 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
 
-        <div class="grid grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
           <input
             v-model="form.meal_date"
             type="date"

@@ -133,11 +133,11 @@ onMounted(async () => {
 
 <template>
 <AppLayout>
-  <div class="min-h-screen bg-gradient-to-br from-[#0F2027] via-[#203A43] to-[#2C5364] flex">
+  <div class="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden bg-gradient-to-br from-[#0F2027] via-[#203A43] to-[#2C5364] lg:flex-row">
 
     <!-- Sidebar -->
-    <div class="w-80 bg-black/30 backdrop-blur-xl border-r border-white/10 text-white flex flex-col">
-      <div class="px-6 py-5 border-b border-white/10">
+    <div class="flex max-h-64 w-full shrink-0 flex-col border-b border-white/10 bg-black/30 text-white backdrop-blur-xl lg:max-h-none lg:w-80 lg:border-b-0 lg:border-r">
+      <div class="border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5">
         <h2 class="text-lg font-semibold">💬 Chats</h2>
         <button @click="newChat"
           class="mt-3 w-full bg-[#4FD1C5] text-[#0F2027] py-2 rounded-lg font-medium hover:bg-[#38B2AC]">
@@ -145,7 +145,7 @@ onMounted(async () => {
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto">
+      <div class="min-h-0 flex-1 overflow-y-auto">
         <div
           v-for="chat in chats"
           :key="chat.session_id"
@@ -174,19 +174,19 @@ onMounted(async () => {
     <!-- Chat -->
     <div class="flex-1 flex flex-col">
 
-      <div class="px-10 py-6 border-b border-white/10 text-white">
+      <div class="border-b border-white/10 px-4 py-5 text-white sm:px-8 lg:px-10">
         <h1 class="text-2xl font-semibold">FitMate AI Coach</h1>
         <p class="text-sm text-white/60">Your personal fitness assistant</p>
       </div>
 
-      <div ref="chatContainer" class="flex-1 overflow-y-auto px-10 py-8 space-y-6">
+      <div ref="chatContainer" class="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
 
         <div v-for="(msg, i) in messages" :key="i"
           class="flex"
           :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
 
           <div
-            class="max-w-[70%] px-5 py-4 rounded-2xl text-sm leading-relaxed"
+            class="max-w-full rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[70%] sm:px-5 sm:py-4"
             :class="msg.role === 'user'
               ? 'bg-[#1B3C53] text-white'
               : 'bg-white/10 text-white border border-white/10'">
@@ -205,7 +205,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="px-8 py-6 border-t border-white/10 bg-black/20 flex gap-4">
+      <div class="flex flex-col gap-3 border-t border-white/10 bg-black/20 px-4 py-4 sm:flex-row sm:px-8 sm:py-6">
         <input
           v-model="input"
           @keyup.enter="sendMessage"
@@ -215,7 +215,7 @@ onMounted(async () => {
         <button
           @click="sendMessage"
           :disabled="loading"
-          class="px-8 py-4 rounded-xl bg-[#4FD1C5] text-[#0F2027] font-medium hover:bg-[#38B2AC]">
+          class="w-full rounded-xl bg-[#4FD1C5] px-8 py-4 font-medium text-[#0F2027] hover:bg-[#38B2AC] sm:w-auto">
           Ask
         </button>
       </div>

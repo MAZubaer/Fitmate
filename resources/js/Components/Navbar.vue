@@ -37,14 +37,14 @@ const navItems = [
 
 <template>
     <nav class="bg-gradient-to-r from-[#1B3C53] via-[#234C6A] to-[#456882] shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
+        <div class="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+            <div class="flex min-w-0 items-center justify-between py-3 sm:h-20 sm:py-0">
                 <!-- Logo / Home Button -->
-                <Link href="/" class="flex items-center space-x-3 group">
+                <Link href="/" class="flex min-w-0 items-center space-x-2 group sm:space-x-3">
                     <img 
                         src="/images/fitmate-logo.png" 
                         alt="FitMate Logo" 
-                        class="h-12 w-auto group-hover:scale-110 transition"
+                        class="h-10 w-auto transition group-hover:scale-110 sm:h-12"
                     />
                     <span class="text-white font-bold text-xl hidden sm:inline group-hover:text-[#E3E3E3] transition">
                         FitMate
@@ -52,11 +52,11 @@ const navItems = [
                 </Link>
 
                 <!-- Navigation Links (Desktop) -->
-                <div class="hidden md:flex items-center space-x-1">
+                <div class="hidden min-w-0 items-center space-x-1 md:flex">
                     <template v-for="item in navItems" :key="item.route">
                         <Link
                             :href="route(item.route)"
-                            class="px-4 py-2 rounded-full text-white font-medium text-sm hover:bg-[#E3E3E3] hover:text-[#1B3C53] transition duration-300 flex items-center space-x-2"
+                            class="flex items-center space-x-2 rounded-full px-2 py-2 text-sm font-medium text-white transition duration-300 hover:bg-[#E3E3E3] hover:text-[#1B3C53] sm:px-3 lg:px-4"
                             :class="{
                                 'bg-[#E3E3E3] text-[#1B3C53]':
                                     currentPage.includes(item.route.split('.')[0]),
@@ -84,7 +84,7 @@ const navItems = [
                 </div>
 
                 <!-- Right Side: User Profile & Auth -->
-                <div class="flex items-center space-x-4">
+                <div class="flex shrink-0 items-center space-x-2 sm:space-x-4">
                     <!-- Mobile Menu Button -->
                     <button
                         class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-[#456882] focus:outline-none transition"
@@ -106,7 +106,7 @@ const navItems = [
                             class="flex items-center space-x-2 px-4 py-2 rounded-full bg-[#456882] hover:bg-[#E3E3E3] hover:text-[#1B3C53] text-white font-medium transition duration-300"
                         >
                             <div
-                                class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#1B3C53] font-bold"
+                                class="flex h-8 w-8 items-center justify-center rounded-full bg-white font-bold text-[#1B3C53]"
                             >
                                 {{ $page.props.auth.user.name.charAt(0) }}
                             </div>

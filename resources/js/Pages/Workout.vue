@@ -208,12 +208,12 @@ onMounted(loadWorkouts)
 
 
     <!-- SEARCH INPUT -->
-         <div class="mb-3 flex gap-2 items-center">
+         <div class="mb-3 flex flex-wrap items-center gap-2">
           <input
           v-model="searchQuery"
           type="text"
           placeholder="Search workouts"
-         class="input flex-1"
+         class="input min-w-0 flex-1"
         >
        <button @click="performSearch" class="btn-sm bg-gray-200">Search</button>
          <!-- Back button -->
@@ -360,7 +360,7 @@ onMounted(loadWorkouts)
         </p>
       </div>
 
-      <div class="mt-6 grid grid-cols-3 gap-3 text-center">
+      <div class="mt-6 grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
         
         <div class="bg-blue-100 p-3 rounded-xl shadow flex flex-col items-center">
           <span class="text-lg font-bold">{{ workouts.reduce((sum, w) => sum + Number(w.sets || 0), 0) }}</span>
@@ -413,7 +413,7 @@ onMounted(loadWorkouts)
 
 <!-- MODAL -->
 <div v-if="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-  <div class="bg-blue-200 p-4 rounded-xl w-110 max-w-md shadow-lg">
+  <div class="w-full max-w-md rounded-xl bg-blue-200 p-4 shadow-lg">
     
     <!-- Header -->
     <h3 class="text-xl font-bold mb-3 text-center text-blue-900">

@@ -23,7 +23,7 @@ const download = (type) => {
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto py-10 px-6">
+  <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
 
     <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8">
       <h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-white flex items-center gap-2">
@@ -54,17 +54,17 @@ const download = (type) => {
         </div>
       </div>
 
-      <div class="flex gap-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <button
           @click="download('csv')"
-          class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow font-medium"
+          class="w-full rounded-lg bg-green-600 px-6 py-2 font-medium text-white shadow hover:bg-green-700 sm:w-auto"
         >
           📄 Download CSV
         </button>
 
         <button
           @click="download('pdf')"
-          class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow font-medium"
+          class="w-full rounded-lg bg-red-600 px-6 py-2 font-medium text-white shadow hover:bg-red-700 sm:w-auto"
         >
           🧾 Download PDF
         </button>

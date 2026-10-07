@@ -9,7 +9,7 @@ const Motivational = "/images/push-yourself.png";
     <Head title="Welcome" />
 
     <!-- Background -->
-    <div class="min-h-screen w-full relative 
+    <div class="relative min-h-screen w-full overflow-hidden
                 bg-gradient-to-br from-gray-900 via-black to-gray-800 
                 text-white overflow-hidden">
 
@@ -18,7 +18,7 @@ const Motivational = "/images/push-yourself.png";
             :src="Motivational"
             alt="Motivation"
             class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                   w-[600px] md:w-[900px] opacity-[0.06] blur-[2px]
+                   w-[min(600px,120vw)] md:w-[900px] opacity-[0.06] blur-[2px]
                    select-none pointer-events-none"
         />
 
@@ -37,10 +37,10 @@ const Motivational = "/images/push-yourself.png";
         </header>
 
         <!-- Main Hero -->
-        <main class="flex justify-center items-center h-screen text-center px-6">
+        <main class="flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 py-24 text-center sm:px-6">
             <div class="max-w-3xl animate-fadeIn relative z-10">
 
-                <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                <h1 class="mb-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
                     Welcome to 
                     <span class="bg-gradient-to-r from-blue-400 to-blue-600 
                                  text-transparent bg-clip-text">
@@ -56,21 +56,17 @@ const Motivational = "/images/push-yourself.png";
                 </div>
 
                 <!-- Buttons -->
-                <div class="mt-10 flex justify-center gap-6">
+                <div class="mt-10 flex flex-col justify-center gap-3 sm:flex-row sm:gap-6">
                     <Link 
                         href="/login"
-                        class="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 
-                               shadow-lg shadow-blue-700/40 transition duration-300 
-                               text-lg font-semibold"
+                           class="w-full rounded-xl bg-blue-600 px-8 py-3 text-lg font-semibold shadow-lg shadow-blue-700/40 transition duration-300 hover:bg-blue-700 sm:w-auto"
                     >
                         Log In
                     </Link>
 
                     <Link 
                         href="/register"
-                        class="px-8 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 
-                               shadow-lg shadow-gray-700/40 transition duration-300 
-                               text-lg font-semibold"
+                           class="w-full rounded-xl bg-gray-700 px-8 py-3 text-lg font-semibold shadow-lg shadow-gray-700/40 transition duration-300 hover:bg-gray-600 sm:w-auto"
                     >
                         Register
                     </Link>

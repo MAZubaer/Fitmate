@@ -603,8 +603,8 @@ onMounted(async () => {
 <template>
   <AppLayout>
     <Head title="Dashboard" />
-    <div class="py-12">
-      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <div class="mx-auto max-w-7xl">
         <!-- Top Pills -->
         <div class="flex justify-end mb-4">
           <div class="flex items-center gap-2">

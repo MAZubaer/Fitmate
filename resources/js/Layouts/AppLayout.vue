@@ -3,7 +3,7 @@ import Navbar from '@/Components/Navbar.vue';
 </script>
 
 <template>
-    <div class="min-h-screen bg-[#E3E3E3]">
+    <div class="min-h-screen overflow-x-hidden bg-[#E3E3E3]">
         <Navbar />
         <main>
             <slot />
