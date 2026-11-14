@@ -1,3 +1,157 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ------------------------------------------------------------------
+   Design tokens (RGB triplets, consumed by tailwind.config.js)
+------------------------------------------------------------------- */
+@layer base {
+    :root {
+        --canvas: 246 247 249;
+        --surface: 255 255 255;
+        --subtle: 241 243 246;
+        --line: 228 231 236;
+        --ink: 15 23 42;
+        --muted: 100 116 139;
+        color-scheme: light;
+    }
+
+    .dark {
+        --canvas: 10 12 17;
+        --surface: 18 21 28;
+        --subtle: 28 32 41;
+        --line: 40 45 57;
+        --ink: 237 240 245;
+        --muted: 146 155 172;
+        color-scheme: dark;
+    }
+
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply bg-canvas text-ink antialiased;
+    }
+
+    ::selection {
+        @apply bg-brand-500/25;
+    }
+
+    [v-cloak] {
+        display: none;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Reusable component classes
+------------------------------------------------------------------- */
+@layer components {
+    .card {
+        @apply rounded-2xl border border-line bg-surface shadow-card;
+    }
+
+    .card-pad {
+        @apply p-5 sm:p-6;
+    }
+
+    .card-title {
+        @apply text-base font-semibold tracking-tight text-ink;
+    }
+
+    .eyebrow {
+        @apply text-xs font-semibold uppercase tracking-wider text-muted;
+    }
+
+    /* Buttons */
+    .btn {
+        @apply inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply btn bg-brand-600 text-white shadow-sm shadow-brand-600/20 hover:bg-brand-700;
+    }
+
+    .btn-secondary {
+        @apply btn border border-line bg-surface text-ink shadow-sm hover:bg-subtle;
+    }
+
+    .btn-ghost {
+        @apply btn text-muted hover:bg-subtle hover:text-ink;
+    }
+
+    .btn-danger {
+        @apply btn bg-rose-600 text-white shadow-sm hover:bg-rose-700;
+    }
+
+    .btn-sm {
+        @apply rounded-lg px-3 py-1.5 text-xs;
+    }
+
+    .btn-icon {
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-subtle hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
+    }
+
+    /* Forms */
+    .input {
+        @apply block w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink shadow-sm transition placeholder:text-muted/70 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:opacity-60;
+    }
+
+    .label {
+        @apply mb-1.5 block text-sm font-medium text-ink;
+    }
+
+    .field-error {
+        @apply mt-1.5 text-sm text-rose-600 dark:text-rose-400;
+    }
+
+    /* Badges */
+    .badge {
+        @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium;
+    }
+
+    .badge-neutral {
+        @apply badge bg-subtle text-muted;
+    }
+
+    .badge-brand {
+        @apply badge bg-brand-500/10 text-brand-700 dark:text-brand-300;
+    }
+
+    .badge-warn {
+        @apply badge bg-amber-500/10 text-amber-700 dark:text-amber-300;
+    }
+
+    .badge-danger {
+        @apply badge bg-rose-500/10 text-rose-700 dark:text-rose-300;
+    }
+
+    /* Segmented control */
+    .segmented {
+        @apply inline-flex rounded-xl bg-subtle p-1;
+    }
+
+    .segmented > button {
+        @apply rounded-lg px-3 py-1.5 text-sm font-medium text-muted transition hover:text-ink;
+    }
+
+    .segmented > button[aria-pressed='true'] {
+        @apply bg-surface text-ink shadow-sm;
+    }
+
+    /* Skeleton loader */
+    .skeleton {
+        @apply animate-pulse rounded-lg bg-subtle;
+    }
+}
+
+@layer utilities {
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(var(--line)) transparent;
+    }
+
+    .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
