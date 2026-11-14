@@ -798,10 +798,15 @@ FitMate is deployed as a **Docker** web service on **[Render](https://render.com
 | Setting | Value |
 | ------- | ----- |
 | Service type | Web Service, Docker runtime |
+| Region | **Singapore** (same region as the Neon database) |
 | Pre-Deploy Command | `php artisan migrate --force` |
-| Health check path | `/` |
+| Health check path | `/up` |
 | Environment | `APP_KEY`, `APP_URL=https://…`, `DB_CONNECTION=pgsql`, `DB_*`, `DB_SSLMODE=require`, `GROQ_API_KEY`, `GOOGLE_*`, `MAIL_*`, `SESSION_DRIVER=database`, `CACHE_STORE=database`, `QUEUE_CONNECTION=database` |
 | Cron Job (separate service) | `php artisan schedule:run` every minute |
+
+These settings are also defined in [`render.yaml`](render.yaml), a Render Blueprint (web service + scheduler cron job, both in Singapore). To create them, go to **Render Dashboard → New → Blueprint** and pick this repository; Render will prompt for the secret values.
+
+Keep the web service in the **same region as the database**. Laravel opens a new database connection on every request, so cross-region latency is paid on every page load.
 
 ### Production notes
 - **HTTPS:** `AppServiceProvider` forces `https` URLs when `APP_ENV=production`, so assets, redirects and signed URLs work behind Render's TLS proxy.

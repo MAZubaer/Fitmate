@@ -1,0 +1,114 @@
+# Render Blueprint for FitMate.
+# Services run in Singapore, next to the Neon database (AWS ap-southeast-1),
+# so each query is a short same-region hop instead of crossing an ocean.
+#
+# Apply with: Render Dashboard -> New -> Blueprint -> pick this repo.
+# Values marked `sync: false` are secrets: Render asks for them when the
+# Blueprint is first applied and never stores them in this file.
+
+envVarGroups:
+  - name: fitmate-shared
+    envVars:
+      - key: APP_NAME
+        value: FitMate
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_SSLMODE
+        value: require
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+
+services:
+  - type: web
+    name: fitmate
+    runtime: docker
+    region: singapore
+    # Pre-deploy commands need a paid instance type; change this if you use another plan.
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    preDeployCommand: php artisan migrate --force
+    # /up is Laravel's built-in health route: it doesn't touch the database or session.
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - fromGroup: fitmate-shared
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_REDIRECT
+        sync: false
+      - key: MAIL_MAILER
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+
+  # Sends meal and workout reminders (routes/console.php schedules reminders:send every minute).
+  - type: cron
+    name: fitmate-scheduler
+    runtime: docker
+    region: singapore
+    plan: starter
+    schedule: "* * * * *"
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: php artisan schedule:run
+    envVars:
+      - fromGroup: fitmate-shared
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: MAIL_MAILER
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
