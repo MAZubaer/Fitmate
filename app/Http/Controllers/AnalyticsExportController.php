@@ -2,95 +2,118 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BmiHistory;
+use App\Models\Meal;
+use App\Models\StepHistory;
+use App\Models\WaterHistory;
+use App\Models\Workout;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Meal;
-use App\Models\Workout;
-use App\Models\StepHistory;
-use App\Models\BmiHistory;
-use App\Models\WaterHistory;
-use Barryvdh\DomPDF\Facade\Pdf;   // ✅ Added for PDF download
 
 class AnalyticsExportController extends Controller
 {
-    private function getData(Request $request)
-    {
-        $user = Auth::user();
-        $from = $request->from . ' 00:00:00';
-        $to   = $request->to . ' 23:59:59';
-
-        return [
-            'meals' => Meal::where('user_id', $user->id)
-                ->whereBetween('meal_date', [$request->from, $request->to])
-                ->get(),
-
-            'workouts' => Workout::where('user_id', $user->id)
-                ->whereBetween('created_at', [$from, $to])
-                ->get(),
-
-            'steps' => StepHistory::where('user_id', $user->id)
-                ->whereBetween('created_at', [$from, $to])
-                ->get(),
-
-            'water' => WaterHistory::where('user_id', $user->id)
-                ->whereBetween('created_at', [$from, $to])
-                ->get(),
-
-            'bmi' => BmiHistory::where('user_id', $user->id)
-                ->orderByDesc('created_at')
-                ->first()
-        ];
-    }
-
     public function csv(Request $request)
     {
-        $data = $this->getData($request);
+        [$from, $to] = $this->range($request);
+        $data = $this->getData($from, $to);
 
-        $csv = "Date,Type,Name,Calories In,Calories Out,Value\n";
+        $out = fopen('php://temp', 'r+');
+        fputcsv($out, ['Date', 'Type', 'Name', 'Calories In', 'Calories Out', 'Value']);
 
-        // Meals (Calories In)
         foreach ($data['meals'] as $m) {
-            $csv .= "{$m->meal_date},Meal,{$m->name},{$m->calories},,\n";
+            fputcsv($out, [$this->day($m->meal_date), 'Meal', $this->cell($m->name), $m->calories, '', '']);
         }
-
-        // Workouts (Calories Out)
         foreach ($data['workouts'] as $w) {
-            $csv .= "{$w->created_at->toDateString()},Workout,{$w->name},,{$w->calories},\n";
+            fputcsv($out, [$this->day($w->date), 'Workout', $this->cell($w->name), '', $w->calories, '']);
         }
-
-        // Steps (no calories)
         foreach ($data['steps'] as $s) {
-            $csv .= "{$s->created_at->toDateString()},Steps,Steps,,," . $s->steps . "\n";
+            fputcsv($out, [$this->day($s->date), 'Steps', 'Steps', '', '', $s->steps]);
         }
-
-        // Water
         foreach ($data['water'] as $w) {
-            $csv .= "{$w->created_at->toDateString()},Water,Water,,," . $w->amount . "\n";
+            fputcsv($out, [$this->day($w->date), 'Water', 'Water', '', '', $w->amount]);
         }
+        fputcsv($out, $data['bmi']
+            ? [$this->day($data['bmi']->date), 'BMI', 'BMI', '', '', $data['bmi']->bmi]
+            : [$to, 'BMI', 'BMI', '', '', 'Not updated']);
 
-        // BMI
-        if ($data['bmi']) {
-            $csv .= "{$data['bmi']->created_at->toDateString()},BMI,BMI,,," . $data['bmi']->bmi . "\n";
-        } else {
-            $csv .= "{$request->to},BMI,BMI,,,Not updated\n";
-        }
+        rewind($out);
+        $csv = stream_get_contents($out);
+        fclose($out);
 
         return response($csv)
-            ->header('Content-Type', 'text/csv')
-            ->header('Content-Disposition', 'attachment; filename=health_data.csv');
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', "attachment; filename=health_data_{$from}_to_{$to}.csv");
     }
 
     public function pdf(Request $request)
     {
-        $data = $this->getData($request);
+        [$from, $to] = $this->range($request);
 
         $pdf = Pdf::loadView('exports.analytics', [
-            'data' => $data,
+            'data' => $this->getData($from, $to),
             'user' => Auth::user(),
-            'from' => $request->from,
-            'to'   => $request->to
+            'from' => $from,
+            'to' => $to,
         ]);
 
-        return $pdf->download('health_report_' . $request->from . '_to_' . $request->to . '.pdf');
+        return $pdf->download("health_report_{$from}_to_{$to}.pdf");
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function range(Request $request): array
+    {
+        $validated = $request->validate([
+            'from' => 'required|date_format:Y-m-d',
+            'to' => 'required|date_format:Y-m-d|after_or_equal:from',
+        ]);
+
+        return [$validated['from'], $validated['to']];
+    }
+
+    /** Everything is filtered by the day it happened, not when the row was created. */
+    private function getData(string $from, string $to): array
+    {
+        $userId = Auth::id();
+
+        return [
+            'meals' => Meal::where('user_id', $userId)
+                ->whereDate('meal_date', '>=', $from)->whereDate('meal_date', '<=', $to)
+                ->orderBy('meal_date')->orderBy('meal_time')->get(),
+
+            'workouts' => Workout::where('user_id', $userId)
+                ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
+                ->orderBy('date')->orderBy('time')->get(),
+
+            'steps' => StepHistory::where('user_id', $userId)
+                ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
+                ->orderBy('date')->get(),
+
+            'water' => WaterHistory::where('user_id', $userId)
+                ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
+                ->orderBy('date')->get(),
+
+            // The most recent BMI on or before the end of the range.
+            'bmi' => BmiHistory::where('user_id', $userId)
+                ->whereDate('date', '<=', $to)
+                ->orderByDesc('date')->orderByDesc('id')
+                ->first(),
+        ];
+    }
+
+    private function day(mixed $date): string
+    {
+        return $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : substr((string) $date, 0, 10);
+    }
+
+    /**
+     * Stop spreadsheet apps from running user text as a formula
+     * (a meal named "=HYPERLINK(...)" would otherwise execute).
+     */
+    private function cell(?string $value): string
+    {
+        $value = (string) $value;
+
+        return $value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true) ? "'".$value : $value;
     }
 }

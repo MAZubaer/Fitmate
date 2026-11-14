@@ -32,6 +32,7 @@ RUN apk add --no-cache \
         exif \
         gd \
         mbstring \
+        opcache \
         pcntl \
         pdo_pgsql \
         zip \
@@ -72,10 +73,23 @@ RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framewor
     && php artisan package:discover --ansi \
     && chown -R www-data:www-data storage bootstrap/cache
 
+# OPcache keeps compiled PHP in memory instead of recompiling every file on every request.
+# The code never changes inside a running container, so timestamp checks are skipped.
+RUN { \
+        echo 'opcache.enable=1'; \
+        echo 'opcache.memory_consumption=128'; \
+        echo 'opcache.max_accelerated_files=20000'; \
+        echo 'opcache.validate_timestamps=0'; \
+    } > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
 ENV APP_ENV=production
 ENV APP_DEBUG=false
+# Fork several PHP server workers so one slow request (e.g. a 10s AI reply)
+# no longer blocks every other request. Requires --no-reload below.
+ENV PHP_CLI_SERVER_WORKERS=4
 
 EXPOSE 8000
 
-# Render supplies PORT. Run migrations with Render's Pre-Deploy Command instead.
-CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+# Render supplies PORT and the environment at runtime, so config/route/view caches are
+# built on startup (not at build time). Migrations run in Render's Pre-Deploy Command.
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000} --no-reload"]

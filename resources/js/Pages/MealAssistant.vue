@@ -128,8 +128,14 @@ async function sendMessage(text = input.value) {
         if (chats.value.every((c) => c.session_id !== sessionId.value)) {
             chats.value.unshift({ session_id: sessionId.value, user_message: prompt, created_at: new Date().toISOString() });
         }
-    } catch {
-        messages.value.push({ role: 'ai', text: 'Sorry — the AI coach is unavailable right now. Please try again in a moment.', error: true });
+    } catch (e) {
+        const text =
+            e.response?.status === 429
+                ? "You're sending messages quickly. Take a short break and try again in a minute."
+                : e.response?.data?.error && e.response.status === 504
+                  ? e.response.data.error
+                  : 'Sorry — the AI coach is unavailable right now. Please try again in a moment.';
+        messages.value.push({ role: 'ai', text, error: true });
     } finally {
         loading.value = false;
         await scrollToBottom();

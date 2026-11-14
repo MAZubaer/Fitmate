@@ -82,9 +82,25 @@ const weatherCodes = {
     86: ['Snow showers', '🌨️'], 95: ['Thunderstorm', '⛈️'], 96: ['Thunderstorm', '⛈️'], 99: ['Thunderstorm', '⛈️'],
 };
 
+// Dhaka is the fallback when the browser can't or won't share a location.
+const DEFAULT_PLACE = { latitude: 23.8103, longitude: 90.4125, label: 'Dhaka' };
+
+const locate = () =>
+    new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve(DEFAULT_PLACE);
+        navigator.geolocation.getCurrentPosition(
+            ({ coords }) => resolve({ latitude: coords.latitude.toFixed(3), longitude: coords.longitude.toFixed(3), label: 'Your location' }),
+            () => resolve(DEFAULT_PLACE),
+            { timeout: 5000, maximumAge: 60 * 60 * 1000 },
+        );
+    });
+
+const weatherPlace = ref(DEFAULT_PLACE.label);
+
 const fetchWeather = async () => {
-    const url =
-        'https://api.open-meteo.com/v1/forecast?latitude=23.8103&longitude=90.4125&current_weather=true&hourly=relative_humidity_2m&timezone=Asia/Dhaka';
+    const place = await locate();
+    weatherPlace.value = place.label;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current_weather=true&hourly=relative_humidity_2m&timezone=auto`;
     try {
         const { data } = await axios.get(url, { withCredentials: false });
         const current = data.current_weather;
@@ -391,7 +407,7 @@ const genderLabel = computed(() => ({ male: 'Male', female: 'Female' })[props.us
             <section class="card card-pad flex flex-col justify-between">
                 <div class="flex items-start justify-between">
                     <div>
-                        <p class="eyebrow">Weather · Dhaka</p>
+                        <p class="eyebrow">Weather · {{ weatherPlace }}</p>
                         <template v-if="weather">
                             <p class="mt-3 text-5xl font-bold tracking-tight tabular-nums">
                                 {{ weather.temp ?? '—' }}<span v-if="weather.temp !== null" class="text-3xl text-muted">°C</span>
@@ -507,8 +523,8 @@ const genderLabel = computed(() => ({ male: 'Male', female: 'Female' })[props.us
                             <p class="text-muted">Eaten</p>
                             <p class="font-semibold tabular-nums">{{ formatNumber(stats.total_calories) }} kcal</p>
                         </div>
-                        <div>
-                            <p class="text-muted">Goal hit</p>
+                        <div title="Days with meals logged and intake within 10% of your daily goal">
+                            <p class="text-muted">On target</p>
                             <p class="font-semibold tabular-nums">{{ stats.goals_completed }}/7 days</p>
                         </div>
                     </div>

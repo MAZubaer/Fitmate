@@ -93,7 +93,7 @@ Built on **Laravel Breeze** (Vue + Inertia stack) and extended with **Google OAu
 | ------- | ------- |
 | Register | Name, email, password + confirmation (Laravel default password rules). The user is logged in and redirected to the dashboard. |
 | Login | Email + password with a "Remember me" option |
-| **Sign in / Sign up with Google** | Uses Laravel Socialite. On callback FitMate: (1) looks up the user by `google_id`; (2) otherwise links the Google account to an existing user with the same email; (3) otherwise creates a new user with a verified email. Google access and refresh tokens are stored on the user. The user is logged in with "remember me" turned on. |
+| **Sign in / Sign up with Google** | Uses Laravel Socialite. On callback FitMate: (1) looks up the user by `google_id`; (2) otherwise links the Google account to an existing user with the same email; (3) otherwise creates a new user with a verified email. FitMate only uses Google to sign in, so Google access and refresh tokens are not stored. The user is logged in with "remember me" turned on. |
 | Forgot / reset password | Emailed reset link |
 | Email verification | Verification screen and resend link (throttled to 6 requests per minute) |
 | Confirm password | Required before sensitive actions |
@@ -117,13 +117,13 @@ The dashboard is the app's home screen. It combines server-rendered props with d
 - Stored once per day; tapping again changes today's value
 
 **Weather widget**
-- Current temperature, condition (emoji icon) and humidity for **Dhaka, BD**, fetched in the browser from the free [Open-Meteo](https://open-meteo.com) API. No API key is needed.
+- Current temperature, condition (emoji icon) and humidity for your location (if the browser shares it; otherwise **Dhaka, BD**), fetched in the browser from the free [Open-Meteo](https://open-meteo.com) API. No API key is needed.
 
 **Calorie stats**
 - Calories eaten **this week** (last 7 days) and **today**
 - **Daily calorie goal** (default 2,200 kcal) with a percentage progress bar
 - A modal to change the goal (500–10,000 kcal)
-- Weekly goals completed: the number of days in the last 7 where intake reached the goal
+- On target: the number of days in the last 7 with meals logged and intake within 10% of the goal
 
 **Upcoming activity**
 - Workouts scheduled for today and tomorrow (`/recent-activity`), showing date, time, sets and reps
@@ -180,10 +180,10 @@ Saving a workout also creates an in-app notification for its scheduled date and 
 
 **Gamification**
 - ⭐ **+10 points** for every meal logged
-- 🔥 **Streak**: grows by 1 when you log a meal the day after your last logged day, and resets to 1 otherwise
-- Deleting a meal **removes 10 points** (never below 0) and **recalculates** the streak from your remaining meal dates
+- 🔥 **Streak**: the number of consecutive days with at least one meal, ending today (or yesterday, if nothing is logged yet today). Several meals on one day count that day once. It is recalculated the same way whenever a meal is added, edited or deleted, and shows 0 once a full day passes without a meal.
+- Deleting a meal **removes 10 points** (never below 0)
 
-If a meal has a time set, an in-app notification is created for that date and time, and the scheduler sends an email reminder when it's due.
+If a meal has a time set, it gets one reminder notification for that date and time, and the scheduler emails it when it's due. Editing the meal moves the reminder; deleting it removes the reminder.
 
 ### 2.6 AI Coach (Meal Assistant)
 
@@ -220,8 +220,8 @@ A ChatGPT-style chat screen titled **"FitMate AI Coach – Your personal fitness
 - The navbar shows a 🔔 badge with the **unread count**
 
 **Where notifications come from**
-1. When a meal (with a time) or workout is saved, a notification is created for its scheduled date and time. It only appears once that time arrives.
-2. The scheduled `reminders:send` command runs every minute. It sends an **email** and creates a notification for meals and workouts that became due in the last 2 minutes (see [Running the Scheduler](#13-running-the-scheduler)).
+1. Each meal (with a time) and each workout owns exactly one notification (`notifications.meal_id` / `workout_id`) for its scheduled date and time. It only appears once that time arrives. Editing the item moves it, deleting the item deletes it, and completing a workout early cancels it.
+2. The scheduled `reminders:send` command runs every minute. It **emails** each due notification once (tracked in `emailed_at`), catching up on anything from the last 15 minutes, and skips completed workouts (see [Running the Scheduler](#13-running-the-scheduler)).
 
 ### 2.8 Analytics Export
 
@@ -540,7 +540,6 @@ These routes redirect back to `/meals` with a flash message.
 | Method | URI | Body | Response |
 | ------ | --- | ---- | -------- |
 | POST | `/calorie-goal` | `calorie_goal` int 500–10000 | `{ "success": true, "goal": 2500 }` |
-| POST | `/user/calorie-goal` | `goal` int 1000–5000 | `{ "success": true }` (alternative endpoint) |
 
 ### AI coach
 | Method | URI | Body | Response |
@@ -847,15 +846,10 @@ docker run --rm --env-file .env fitmate php artisan migrate --force
 
 These are current behaviours worth knowing about, and good first contributions:
 
-- **Weather location is fixed** to Dhaka, and the app time zone is `Asia/Dhaka` for all users.
-- **Duplicate reminders:** a scheduled meal or workout creates a notification when it's saved *and* another when `reminders:send` runs, so users can see two notifications for one item.
-- **Reminder performance:** `reminders:send` loads every meal and workout each minute and sends mail synchronously, which will be slow with many records.
-- **Two calorie-goal endpoints** with different limits exist (`/calorie-goal`: 500–10,000; `/user/calorie-goal`: 1,000–5,000). The dashboard uses the first.
+- The app time zone is `Asia/Dhaka` for all users.
+- **Reminder email is synchronous:** `reminders:send` sends mail inline rather than through a queue.
 - The dashboard's `total_workouts` stat is currently a placeholder (always `0`).
-- The workout page marks a workout complete with `PUT /workouts-data/{id}` rather than the dedicated `/complete` endpoint.
-- The profile dropdown links to `/settings`, which has no route yet.
-- `Route::resource('meals', …)` is registered twice in `routes/web.php`. This is harmless.
-- Tests cover only authentication and profile; there are no feature tests for workouts, meals, health tracking or the AI coach yet.
+- Tests cover authentication, profile, meal streaks, reminders, exports, the AI coach and account security; workouts and health tracking have no dedicated feature tests yet.
 
 ---
 

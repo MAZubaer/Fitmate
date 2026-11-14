@@ -18,7 +18,9 @@ class OAuthController extends Controller
     }
 
     /**
-     * Handle callback from Google OAuth
+     * Handle callback from Google OAuth.
+     *
+     * Google is only used to sign in, so its access/refresh tokens are not stored.
      */
     public function handleGoogleCallback()
     {
@@ -28,40 +30,24 @@ class OAuthController extends Controller
             return redirect()->route('login')->with('error', 'Failed to authenticate with Google');
         }
 
-        // Find or create user
-        $user = User::where('google_id', $googleUser->getId())->first();
+        $user = User::where('google_id', $googleUser->getId())->first()
+            ?? User::where('email', $googleUser->getEmail())->first();
 
-        if (!$user) {
-            // Check if user exists by email
-            $user = User::where('email', $googleUser->getEmail())->first();
-
-            if ($user) {
-                // Update existing user with Google ID
-                $user->update([
-                    'google_id' => $googleUser->getId(),
-                    'google_token' => $googleUser->token,
-                    'google_refresh_token' => $googleUser->refreshToken,
-                ]);
-            } else {
-                // Create new user
-                $user = User::create([
-                    'name' => $googleUser->getName(),
-                    'email' => $googleUser->getEmail(),
-                    'google_id' => $googleUser->getId(),
-                    'google_token' => $googleUser->token,
-                    'google_refresh_token' => $googleUser->refreshToken,
-                    'email_verified_at' => now(),
-                ]);
+        if ($user) {
+            // Link Google to an existing email/password account on first Google sign-in.
+            if (! $user->google_id) {
+                $user->update(['google_id' => $googleUser->getId()]);
             }
         } else {
-            // Update tokens
-            $user->update([
-                'google_token' => $googleUser->token,
-                'google_refresh_token' => $googleUser->refreshToken,
+            $user = User::create([
+                'name' => $googleUser->getName(),
+                'email' => $googleUser->getEmail(),
+                'google_id' => $googleUser->getId(),
             ]);
+            // Google has already verified this address.
+            $user->forceFill(['email_verified_at' => now()])->save();
         }
 
-        // Log in the user
         Auth::login($user, remember: true);
 
         return redirect()->route('dashboard');

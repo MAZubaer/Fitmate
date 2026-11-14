@@ -32,7 +32,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                // Only the whitelisted fields from User::toFrontend(), never the whole model.
+                'user' => fn () => $request->user()?->toFrontend(),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

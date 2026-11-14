@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasReminder;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Meal extends Model
 {
-    use HasFactory;
+    use HasFactory, HasReminder;
 
     protected $fillable = [
         'user_id',
@@ -18,9 +20,18 @@ class Meal extends Model
         'meal_time',
     ];
 
-    // Relationship: A meal belongs to a user
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reminderTime(): ?Carbon
+    {
+        return static::combineDateTime($this->meal_date, $this->meal_time);
+    }
+
+    public function reminderMessage(): string
+    {
+        return "🍽️ Time for your meal: {$this->name}";
     }
 }

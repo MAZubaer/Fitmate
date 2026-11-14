@@ -2,9 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
-use Illuminate\Support\Str;
 
 use App\Models\AiChat;
 
@@ -77,8 +75,7 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::resource('meals', MealController::class);
-    Route::resource('meals', MealController::class); // kept for teammate safety
+    Route::resource('meals', MealController::class)->except('show');
 
     
 
@@ -90,7 +87,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/meal-assistant', fn () => Inertia::render('MealAssistant'))->name('meal.assistant');
 
+    // Rate limited (see AppServiceProvider) so one account can't run up the Groq bill.
     Route::post('/ai/meal-assistant', [AiMealAssistantController::class, 'generate'])
+        ->middleware('throttle:ai')
         ->name('ai.meal.assistant');
 
     /*
@@ -100,14 +99,6 @@ Route::middleware('auth')->group(function () {
     */
 
     Route::get('/ai/chat-history', function () {
-        AiChat::where('user_id', auth()->id())
-            ->whereNull('session_id')
-            ->get()
-            ->each(function ($row) {
-                $row->session_id = (string) Str::uuid();
-                $row->save();
-            });
-
         return AiChat::select('session_id', 'user_message', 'created_at')
             ->where('user_id', auth()->id())
             ->whereNotNull('session_id')
@@ -141,20 +132,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/analytics/export', fn () => Inertia::render('AnalyticsExport'));
     Route::get('/analytics/export/csv', [AnalyticsExportController::class, 'csv']);
     Route::get('/analytics/export/pdf', [AnalyticsExportController::class, 'pdf']);
-
-    /*
-    |--------------------------------------------------------------------------
-    | User Settings
-    |--------------------------------------------------------------------------
-    */
-
-    Route::post('/user/calorie-goal', function (Request $request) {
-        $request->validate(['goal' => 'required|integer|min:1000|max:5000']);
-        auth()->user()->update([
-            'calorie_goal' => $request->goal
-        ]);
-        return response()->json(['success' => true]);
-    });
 
     /*
     |--------------------------------------------------------------------------

@@ -2,82 +2,62 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Meal;
-use App\Models\Workout;
-use App\Models\User;
 use App\Models\Notification;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Carbon\Carbon;
 
+/**
+ * Emails the reminders that just became due.
+ *
+ * Every meal or workout with a time owns one notification (see HasReminder),
+ * so this only has to find due notifications that haven't been emailed yet.
+ * The in-app notification already exists; this command never creates another.
+ */
 class SendReminderEmails extends Command
 {
     protected $signature = 'reminders:send';
+
     protected $description = 'Send meal & workout reminder emails';
 
-    public function handle()
+    /**
+     * How far back to look. Reminders are sent once (emailed_at), so a wider
+     * window just lets a short scheduler outage catch up instead of skipping.
+     */
+    private const CATCH_UP_MINUTES = 15;
+
+    public function handle(): int
     {
-        $now = Carbon::now();
-        $windowStart = $now->copy()->subMinutes(2);
+        $now = now();
+        $sent = 0;
 
-        // ===== MEALS =====
-        foreach (Meal::all() as $meal) {
-            $scheduled = Carbon::parse($meal->meal_date . ' ' . $meal->meal_time);
+        Notification::query()
+            ->whereNull('emailed_at')
+            ->whereBetween('scheduled_at', [$now->copy()->subMinutes(self::CATCH_UP_MINUTES), $now])
+            ->where(fn ($q) => $q->whereNotNull('meal_id')->orWhereNotNull('workout_id'))
+            ->with(['user', 'workout'])
+            ->chunkById(100, function ($reminders) use (&$sent) {
+                foreach ($reminders as $reminder) {
+                    // Mark first: a failing mail server must not cause a resend every minute.
+                    $reminder->forceFill(['emailed_at' => now()])->save();
 
-            if ($scheduled->betweenIncluded($windowStart, $now)) {
-                $user = User::find($meal->user_id);
-                if (!$user) continue;
+                    if (! $reminder->user || $reminder->workout?->completed) {
+                        continue;
+                    }
 
-                $msg = "Meal Reminder: " . $meal->name;
-
-                if (!Notification::where('user_id', $user->id)
-                    ->where('message', $msg)
-                    ->exists()) {
-
-                    Mail::raw("Time for your meal: {$meal->name}", function ($mail) use ($user) {
-                        $mail->to($user->email)
-                             ->subject("🍽 FitMate Meal Reminder");
-                    });
-
-                    Notification::create([
-                        'user_id' => $user->id,
-                        'message' => $msg,
-                        'scheduled_at' => $scheduled,
-                        'read' => false
-                    ]);
+                    try {
+                        $subject = $reminder->workout_id ? '💪 FitMate Workout Reminder' : '🍽 FitMate Meal Reminder';
+                        Mail::raw($reminder->message, fn ($mail) => $mail->to($reminder->user->email)->subject($subject));
+                        $sent++;
+                    } catch (\Throwable $e) {
+                        // One bad address or mail outage shouldn't stop everyone else's reminders.
+                        Log::warning('Reminder email failed', ['notification_id' => $reminder->id, 'error' => $e->getMessage()]);
+                    }
                 }
-            }
-        }
+            });
 
-        // ===== WORKOUTS =====
-        foreach (Workout::all() as $workout) {
-            $scheduled = Carbon::parse($workout->date . ' ' . $workout->time);
+        $this->info("Sent {$sent} reminder(s) at {$now}");
 
-            if ($scheduled->betweenIncluded($windowStart, $now)) {
-                $user = User::find($workout->user_id);
-                if (!$user) continue;
-
-                $msg = "Workout Reminder: " . $workout->name;
-
-                if (!Notification::where('user_id', $user->id)
-                    ->where('message', $msg)
-                    ->exists()) {
-
-                    Mail::raw("Time for your workout: {$workout->name}", function ($mail) use ($user) {
-                        $mail->to($user->email)
-                             ->subject("💪 FitMate Workout Reminder");
-                    });
-
-                    Notification::create([
-                        'user_id' => $user->id,
-                        'message' => $msg,
-                        'scheduled_at' => $scheduled,
-                        'read' => false
-                    ]);
-                }
-            }
-        }
-
-        $this->info("Reminder check completed at " . $now);
+        return self::SUCCESS;
     }
 }

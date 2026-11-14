@@ -5,27 +5,31 @@ import InputLabel from '@/Components/InputLabel.vue';
 import Modal from '@/Components/Modal.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useForm } from '@inertiajs/vue3';
-import { nextTick, ref } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
+import { computed, nextTick, ref } from 'vue';
+
+// Google-only accounts have no password, so they confirm by typing DELETE.
+const hasPassword = computed(() => usePage().props.auth.user?.has_password !== false);
 
 const confirmingUserDeletion = ref(false);
 const passwordInput = ref(null);
 
 const form = useForm({
     password: '',
+    confirmation: '',
 });
 
 const confirmUserDeletion = () => {
     confirmingUserDeletion.value = true;
 
-    nextTick(() => passwordInput.value.focus());
+    nextTick(() => passwordInput.value?.focus());
 };
 
 const deleteUser = () => {
     form.delete(route('profile.destroy'), {
         preserveScroll: true,
         onSuccess: () => closeModal(),
-        onError: () => passwordInput.value.focus(),
+        onError: () => passwordInput.value?.focus(),
         onFinish: () => form.reset(),
     });
 };
@@ -64,11 +68,27 @@ const closeModal = () => {
 
                 <p class="mt-1 text-sm text-muted">
                     Once your account is deleted, all of its resources and data
-                    will be permanently deleted. Please enter your password to
-                    confirm you would like to permanently delete your account.
+                    will be permanently deleted.
+                    <template v-if="hasPassword">Please enter your password to confirm you would like to permanently delete your account.</template>
+                    <template v-else>Type <strong class="font-semibold text-ink">DELETE</strong> to confirm.</template>
                 </p>
 
-                <div class="mt-6">
+                <div v-if="!hasPassword" class="mt-6">
+                    <InputLabel for="confirmation" value="Confirmation" class="sr-only" />
+                    <TextInput
+                        id="confirmation"
+                        ref="passwordInput"
+                        v-model="form.confirmation"
+                        type="text"
+                        class="mt-1 block w-full"
+                        placeholder="DELETE"
+                        autocomplete="off"
+                        @keyup.enter="deleteUser"
+                    />
+                    <InputError :message="form.errors.confirmation" class="mt-2" />
+                </div>
+
+                <div v-else class="mt-6">
                     <InputLabel
                         for="password"
                         value="Password"

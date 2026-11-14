@@ -3,8 +3,11 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+
+// Accounts created with Google start without a password; they can set one here.
+const hasPassword = computed(() => usePage().props.auth.user?.has_password !== false);
 
 const passwordInput = ref(null);
 const currentPasswordInput = ref(null);
@@ -26,7 +29,7 @@ const updatePassword = () => {
             }
             if (form.errors.current_password) {
                 form.reset('current_password');
-                currentPasswordInput.value.focus();
+                currentPasswordInput.value?.focus();
             }
         },
     });
@@ -47,7 +50,11 @@ const updatePassword = () => {
         </header>
 
         <form @submit.prevent="updatePassword" class="space-y-5">
-            <div>
+            <p v-if="!hasPassword" class="rounded-xl bg-subtle px-4 py-3 text-sm text-muted">
+                You sign in with Google, so your account has no password yet. Set one to also sign in with your email.
+            </p>
+
+            <div v-if="hasPassword">
                 <InputLabel for="current_password" value="Current Password" />
 
                 <TextInput
@@ -101,7 +108,7 @@ const updatePassword = () => {
             </div>
 
             <div class="flex items-center gap-4">
-                <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
+                <PrimaryButton :disabled="form.processing">{{ hasPassword ? 'Save' : 'Set password' }}</PrimaryButton>
 
                 <Transition
                     enter-active-class="transition ease-in-out"

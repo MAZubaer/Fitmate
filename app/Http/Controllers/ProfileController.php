@@ -54,11 +54,14 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
+
+        // Google-only accounts have no password, so they confirm by typing DELETE instead.
+        $request->validate($user->password !== null
+            ? ['password' => ['required', 'current_password']]
+            : ['confirmation' => ['required', 'in:DELETE']],
+            ['confirmation.in' => 'Type DELETE to confirm.'],
+        );
 
         Auth::logout();
 

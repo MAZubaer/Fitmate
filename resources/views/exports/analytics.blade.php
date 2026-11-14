@@ -44,7 +44,7 @@
         {{-- Meals (Calories In) --}}
         @foreach($data['meals'] as $m)
         <tr>
-            <td>{{ $m->meal_date }}</td>
+            <td>{{ substr((string) $m->meal_date, 0, 10) }}</td>
             <td>Meal</td>
             <td>{{ $m->name }}</td>
             <td>{{ $m->calories }}</td>
@@ -56,7 +56,7 @@
         {{-- Workouts (Calories Out) --}}
         @foreach($data['workouts'] as $w)
         <tr>
-            <td>{{ $w->created_at->toDateString() }}</td>
+            <td>{{ substr((string) $w->date, 0, 10) }}</td>
             <td>Workout</td>
             <td>{{ $w->name }}</td>
             <td></td>
@@ -68,7 +68,7 @@
         {{-- Steps (Value only – no calories) --}}
         @foreach($data['steps'] as $s)
         <tr>
-            <td>{{ $s->created_at->toDateString() }}</td>
+            <td>{{ substr((string) $s->date, 0, 10) }}</td>
             <td>Steps</td>
             <td>Steps</td>
             <td></td>
@@ -80,7 +80,7 @@
         {{-- Water (Value only – ml) --}}
         @foreach($data['water'] as $w)
         <tr>
-            <td>{{ $w->created_at->toDateString() }}</td>
+            <td>{{ substr((string) $w->date, 0, 10) }}</td>
             <td>Water</td>
             <td>Water</td>
             <td></td>
@@ -91,7 +91,7 @@
 
         {{-- BMI (Latest or Not updated) --}}
         <tr>
-            <td>{{ $data['bmi']?->created_at?->toDateString() ?? $to }}</td>
+            <td>{{ $data['bmi'] ? substr((string) $data['bmi']->date, 0, 10) : $to }}</td>
             <td>BMI</td>
             <td>BMI</td>
             <td></td>

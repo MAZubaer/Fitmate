@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $workoutEndDate   = now()->toDateString();
 
         $workouts = Workout::where('user_id', $user->id)
-            ->whereRaw('completed = TRUE')
+            ->where('completed', true)
             ->whereDate('date', '>=', $workoutStartDate)
             ->whereDate('date', '<=', $workoutEndDate)
             ->selectRaw('DATE(date) as date, SUM(calories) as calories')
@@ -85,12 +85,11 @@ class DashboardController extends Controller
         /* -------------------------------
            Weekly Goal Progress
         --------------------------------*/
-        $goalsCompleted = 0;
-        foreach ($calorieChart as $day) {
-            if ($day['calories'] >= $dailyGoal) {
-                $goalsCompleted++;
-            }
-        }
+        // A day is "on target" when meals were logged and intake landed within
+        // 10% of the goal; eating far more than the goal doesn't count as a hit.
+        $goalsCompleted = collect($calorieChart)
+            ->filter(fn ($day) => $day['calories'] > 0 && abs($day['calories'] - $dailyGoal) <= $dailyGoal * 0.1)
+            ->count();
 
         /* -------------------------------
            Dashboard Stats
@@ -104,12 +103,12 @@ class DashboardController extends Controller
             'goals_completed' => $goalsCompleted,
             'this_month'      => date('F Y'),
             'joined_date'     => $user->created_at->format('M d, Y'),
-            'meal_streak'     => $user->meal_streak ?? 0,
+            'meal_streak'     => $user->currentMealStreak(),
             'meal_points'    => $user->meal_points ?? 0,
         ];
 
         return Inertia::render('Dashboard', [
-            'user'              => $user,
+            'user'              => $user->toFrontend(),
             'stats'             => $stats,
             'calorieChart'      => $calorieChart,
             'calorieBurnedChart'=> $calorieBurnedChart,
