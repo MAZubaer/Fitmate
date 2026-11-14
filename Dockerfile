@@ -104,5 +104,8 @@ ENV PHP_CLI_SERVER_WORKERS=4
 EXPOSE 8000
 
 # Render supplies PORT and the environment at runtime, so config/route/view caches are
-# built on startup (not at build time). Migrations run in Render's Pre-Deploy Command.
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000} --no-reload"]
+# built on startup (not at build time). Migrations also run here, because Render's
+# Pre-Deploy Command only exists on paid plans; on the free plan new migrations would
+# otherwise never run. Already-applied migrations are skipped, so this is a no-op when
+# nothing is new. (The cron service overrides CMD, so only the web service migrates.)
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000} --no-reload"]
