@@ -7,6 +7,12 @@
 
         <title inertia>{{ config('app.name', 'FitMate') }}</title>
 
+        {{-- Tab icon: SVG for modern browsers, PNG/ICO fallbacks, and the iOS home-screen icon. --}}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32">
+        <link rel="icon" href="/favicon.ico" sizes="48x48">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
         {{-- Apply the saved (or system) colour theme before first paint to avoid a flash. --}}
         <script>
             (function () {
