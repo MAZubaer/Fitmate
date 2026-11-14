@@ -82,6 +82,19 @@ RUN { \
         echo 'opcache.validate_timestamps=0'; \
     } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
+# Security hardening (PHP2Shell, October 2026):
+# - Refuse to build on a PHP older than the release that fixes CVE-2026-109618/109619,
+#   e.g. if a stale cached base image is used.
+# - CVE-2026-115560 has no patched release yet; PHP's interim mitigation is to turn off
+#   session upload progress in php.ini. Laravel doesn't use PHP's native sessions, so
+#   nothing in FitMate depends on it. Remove once a fixed PHP 8.2 release ships.
+RUN php -r 'exit(version_compare(PHP_VERSION, "8.2.35", ">=") ? 0 : 1);' \
+        || (echo "PHP $(php -r 'echo PHP_VERSION;') is missing the PHP2Shell fixes; rebuild without cache" && exit 1) \
+    && { \
+        echo 'session.upload_progress.enabled=0'; \
+        echo 'expose_php=Off'; \
+    } > /usr/local/etc/php/conf.d/security.ini
+
 ENV APP_ENV=production
 ENV APP_DEBUG=false
 # Fork several PHP server workers so one slow request (e.g. a 10s AI reply)
